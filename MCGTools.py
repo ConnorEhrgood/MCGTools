@@ -23,7 +23,6 @@ def goget(addr, output): #This function downloads files from HTTP destinations f
 
     print("Download complete!")
     cursor.show()
-    return output
 
 
 
