@@ -1,4 +1,6 @@
-directories:
+#This is an example of what an MCGTools config might look like
+
+directories: #These are the directories for DIRector to create
   Cam_1: []
   Cam_2: []
   Cam_3: []
@@ -6,47 +8,49 @@ directories:
   Cam_5: []
   PGM: []
   HELO: []
-  Stream: []
+  Stream: 
+    vimeo: []
+    youtube: []
 
 
-files:
+files: #These are files for gogetter to go get
 
   -
-    url: 'http://192.168.0.11/media/Cam_1_Set_1.mov'
+    url: 'http://212.183.159.230/100MB.zip' #URL of the file to be downloaded
+    dir: 'Cam_1' #Director to store the file in
+
+  -
+    url: 'http://212.183.159.230/100MB.zip'
     dir: 'Cam_1'
 
   -
-    url: 'http://192.168.0.11/media/Cam_1_Set_2.mov'
-    dir: 'Cam_1'
-
-  -
-    url: 'http://192.168.0.12/media/Cam_2_Set_1.mov'
+    url: 'http://212.183.159.230/100MB.zip'
     dir: 'Cam_2'
 
   -
-    url: 'http://192.168.0.12/media/Cam_2_Set_2.mov'
+    url: 'http://212.183.159.230/100MB.zip'
     dir: 'Cam_2'
 
   -
-    url: 'http://192.168.0.13/media/Cam_3_Set_1.mov'
+    url: 'http://212.183.159.230/100MB.zip'
     dir: 'Cam_3'
 
   -
-    url: 'http://192.168.0.13/media/Cam_3_Set_2.mov'
+    url: 'http://212.183.159.230/100MB.zip'
     dir: 'Cam_3'
 
   -
-    url: 'http://192.168.0.14/media/Cam_4_Set_1.mov'
+    url: 'http://212.183.159.230/100MB.zip'
     dir: 'Cam_4'
 
   -
-    url: 'http://192.168.0.14/media/Cam_4_Set_2.mov'
+    url: 'http://212.183.159.230/100MB.zip'
     dir: 'Cam_4'
 
   -
-    url: 'http://192.168.0.15/media/PGM_Set_1.mov'
+    url: 'http://212.183.159.230/100MB.zip'
     dir: 'PGM'
 
   -
-    url: 'http://192.168.0.15/media/PGM_Set_2.mov'
+    url: 'http://212.183.159.230/100MB.zip'
     dir: 'PGM'
