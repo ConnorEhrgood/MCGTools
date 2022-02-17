@@ -1,0 +1,52 @@
+directories:
+  Cam_1: []
+  Cam_2: []
+  Cam_3: []
+  Cam_4: []
+  Cam_5: []
+  PGM: []
+  HELO: []
+  Stream: []
+
+
+files:
+
+  -
+    url: 'http://192.168.0.11/media/Cam_1_Set_1.mov'
+    dir: 'Cam_1'
+
+  -
+    url: 'http://192.168.0.11/media/Cam_1_Set_2.mov'
+    dir: 'Cam_1'
+
+  -
+    url: 'http://192.168.0.12/media/Cam_2_Set_1.mov'
+    dir: 'Cam_2'
+
+  -
+    url: 'http://192.168.0.12/media/Cam_2_Set_2.mov'
+    dir: 'Cam_2'
+
+  -
+    url: 'http://192.168.0.13/media/Cam_3_Set_1.mov'
+    dir: 'Cam_3'
+
+  -
+    url: 'http://192.168.0.13/media/Cam_3_Set_2.mov'
+    dir: 'Cam_3'
+
+  -
+    url: 'http://192.168.0.14/media/Cam_4_Set_1.mov'
+    dir: 'Cam_4'
+
+  -
+    url: 'http://192.168.0.14/media/Cam_4_Set_2.mov'
+    dir: 'Cam_4'
+
+  -
+    url: 'http://192.168.0.15/media/PGM_Set_1.mov'
+    dir: 'PGM'
+
+  -
+    url: 'http://192.168.0.15/media/PGM_Set_2.mov'
+    dir: 'PGM'
