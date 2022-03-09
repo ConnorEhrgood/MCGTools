@@ -1,6 +1,5 @@
 def goget(addr, output): #This function downloads files from HTTP destinations from a list of addresses to locations specified in that list
-    import requests
-    import cursor
+    import requests, cursor
 
     cursor.hide()
 
@@ -26,22 +25,8 @@ def goget(addr, output): #This function downloads files from HTTP destinations f
 
 
 
-def makelsdirs(path, dirsls): #This function builds directory trees based upon nested lists
-    import os
-
-    for dirs in dirsls: 
-        dir_path = os.path.join(path, dirs) #Creates a valid path string for the directory to be created
-        os.makedirs(dir_path) #Creates the new directory
-
-        if dirs: #Checks to see if any sub-directories have been specified
-            subdirs = dirsls[dirs] #Parses the subdirectories into a new list to be passed into this function again
-            makelsdirs(dir_path, subdirs) #Call to this function to make sub-directiories and any of their sub-directories...
-
-
-
 def megamd5(file): #This function generates the MD5 hash of an input file ans saves it to a .md5 file with the same name in the same directory as the input file
-    import os
-    import hashlib
+    import os, hashlib
 
     file_name = os.path.split(file)[1]  #Creates a string of the input filename without the path; i.e. 'file.txt'
     file_base = os.path.splitext(file_name)[0] #Creates a string of the base of the input filename without the extension; i.e. 'file'
@@ -58,6 +43,19 @@ def megamd5(file): #This function generates the MD5 hash of an input file ans sa
 
     with open(output_path, 'w') as o:
         o.write(f'{hexi_sum} {file_name}') #Writes MD5 hash and file name into a text document in a format that md5sum can verify
+
+
+
+def makelsdirs(path, dirsls): #This function builds directory trees based upon nested lists
+    import os
+
+    for dirs in dirsls: 
+        dir_path = os.path.join(path, dirs) #Creates a valid path string for the directory to be created
+        os.makedirs(dir_path) #Creates the new directory
+
+        if dirs: #Checks to see if any sub-directories have been specified
+            subdirs = dirsls[dirs] #Parses the subdirectories into a new list to be passed into this function again
+            makelsdirs(dir_path, subdirs) #Call to this function to make sub-directiories and any of their sub-directories...
 
 
 

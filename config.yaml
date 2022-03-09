@@ -17,7 +17,7 @@ files: #These are files for gogetter to go get
 
   -
     url: 'http://212.183.159.230/100MB.zip' #URL of the file to be downloaded
-    dir: 'Cam_1' #Director to store the file in
+    dir: 'Cam_1' #Directory to store the file in
 
   -
     url: 'http://212.183.159.230/100MB.zip'

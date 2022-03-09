@@ -1,0 +1,35 @@
+#!/bin/python
+
+import os, hashlib, sys, atexit
+
+
+def output(data, end = '\n'): #Function to print data to console ONLY if process is in the foreground
+    if os.getpgrp() == os.tcgetpgrp(sys.stdout.fileno()): #Checks wheter this process is the process in the foreground of the terminal
+        print(data, end = end)
+
+input_file = sys.argv[1]
+file_name = os.path.split(input_file)[1]  #Creates a string of the input filename without the path; i.e. 'file.txt'
+file_base = os.path.splitext(file_name)[0] #Creates a string of the base of the input filename without the extension; i.e. 'file'
+file_path = os.path.split(input_file)[0] #Creates a string of the path to the input filename; i.e. '/home/directory/'
+output_file = os.path.join(file_path, f'{file_base}.md5') #Creates the output path for the MD5 hash; i.e. '/home/directory/file.md5'
+file_size = os.path.getsize(input_file) #Gets the file size of the input file so progress can be tracked
+
+output(f'Input: {input_file}   Output: {output_file}')
+
+chunk_count = 0
+with open(input_file, 'rb') as f:
+    file_md5 = hashlib.md5()
+
+    while chunk := f.read(16384): #Computes MD5 hash in chunks to avoid loading entire file into ram
+        file_md5.update(chunk)
+
+        chunk_count += 1 #Increments chunck count
+        prog = int(((chunk_count * 16384) / file_size)*100) #Calculates progress percentage
+        output(f'{prog}% Complete.', end = '\r') #Prints progress percentage
+
+hexi_sum = file_md5.hexdigest() #Saves MD5 hash as string
+
+with open(output_file, 'w') as o:
+    o.write(f'{hexi_sum} {file_name}') #Writes MD5 hash and file name into a text document in a format that md5sum can verify
+
+output('MD5 calculation complete!')
