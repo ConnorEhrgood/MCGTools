@@ -7,6 +7,13 @@ def output(data, end = '\n'): #Function to print data to console ONLY if process
     if os.getpgrp() == os.tcgetpgrp(sys.stdout.fileno()): #Checks wheter this process is the process in the foreground of the terminal
         print(data, end = end)
 
+if len(sys.argv) < 2:
+    output('ERROR: An input file MUST be provided! Usage: megamd5 <INPUT FILE>')
+    exit()
+elif len(sys.argv) > 2:
+    output('ERROR: Too many arguments provided! Usage: megamd5 <INPUT FILE>')
+    exit()
+
 input_file = sys.argv[1]
 file_name = os.path.split(input_file)[1]  #Creates a string of the input filename without the path; i.e. 'file.txt'
 file_base = os.path.splitext(file_name)[0] #Creates a string of the base of the input filename without the extension; i.e. 'file'
