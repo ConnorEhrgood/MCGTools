@@ -1,6 +1,6 @@
 #!/bin/python
 
-import os, hashlib, sys, atexit
+import os, hashlib, sys
 
 
 def output(data, end = '\n'): #Function to print data to console ONLY if process is in the foreground
@@ -24,6 +24,7 @@ file_size = os.path.getsize(input_file) #Gets the file size of the input file so
 output(f'Input: {input_file}   Output: {output_file}')
 
 chunk_count = 0
+current_prog = 0
 with open(input_file, 'rb') as f:
     file_md5 = hashlib.md5()
 
@@ -31,8 +32,10 @@ with open(input_file, 'rb') as f:
         file_md5.update(chunk)
 
         chunk_count += 1 #Increments chunck count
-        prog = int(((chunk_count * 16384) / file_size)*100) #Calculates progress percentage
-        output(f'{prog}% Complete.', end = '\r') #Prints progress percentage
+        prog = round(((chunk_count * 16384) / file_size)*100, 1) #Calculates progress percentage
+        if current_prog != prog: #Reduces number of prints to only what is necessary
+            current_prog = prog
+            output(f'{current_prog}% Complete.', end = '\r') #Prints current progress percentage
 
 hexi_sum = file_md5.hexdigest() #Saves MD5 hash as string
 
