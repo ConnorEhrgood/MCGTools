@@ -1,0 +1,35 @@
+#!/bin/python
+
+import os, sys, threading, yaml
+import MCGTools as mt
+
+def output(data, end = '\n'): #Function to print data to console ONLY if process is in the foreground
+    if os.getpgrp() == os.tcgetpgrp(sys.stdout.fileno()): #Checks wheter this process is the process in the foreground of the terminal
+        print(data, end = end)
+
+
+if __name__ == "__main__":
+
+    if len(sys.argv) < 3:
+        output('ERROR: A name and config file file MUST be provided! Usage: gogetter <NAME> <CONFIG FILE>')
+        exit(1)
+    elif len(sys.argv) > 3:
+        output('ERROR: Too many arguments provided! Usage: gogetter <NAME> <CONFIG FILE>')
+        exit(1)
+
+    name = sys.argv[1]
+    config_file = sys.argv[2]
+    directory = os.path.join(os.getcwd(), name)
+
+    with open(config_file, 'r') as config_open:
+        config = yaml.safe_load(config_open) #Saves the contents of the config file as a list
+
+    files = config['files']
+    print(files)
+
+    mt.DIRector(directory, config_file)
+
+    for file in files:
+        current_addr = file['url']
+        current_dir = file['dir']
+        output(f'{current_addr} >> {name}/{current_dir}')

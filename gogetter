@@ -1,0 +1,40 @@
+#!/bin/python
+
+import os, sys, threading, yaml, requests #Imports necessary libraries
+import MCGTools as mt #Imports MCGTools (as mt) so we can use it's functions (goget, DIRector, megamd5, output)
+
+output = mt.output #Lets us call output without "mt." at the beginning
+
+if __name__ == "__main__": #Defines this as the main function; Important for threading (not yet implemented)
+
+    if len(sys.argv) < 3: #Checks to make sure the correct number of arguments is provided
+        output('ERROR: A name and config file file MUST be provided! Usage: kicopy <NAME> <CONFIG FILE>')
+        exit(1)
+    elif len(sys.argv) > 3:
+        output('ERROR: Too many arguments provided! Usage: kicopy <NAME> <CONFIG FILE>')
+        exit(1)
+
+    name = sys.argv[1] #Extracts the name argument provided in the terminal
+    config_file = sys.argv[2] #Extracts the config file argument provided in the terminal
+    directory = os.path.join(os.getcwd(), name) #Generates the directory path based upon the current working directory and the name provided
+
+    with open(config_file, 'r') as config_open: #Opens the config file provided
+        config = yaml.safe_load(config_open) #Saves the contents of the config file as a list
+
+    files = config['files'] #Parses the files to be downloaded into a list
+    dir_list = config['directories'] #Parses the directories to be created into a nested list
+
+    mt.director(directory, dir_list) #Calls DIRector to create the specified folder tree
+
+    for file in files: #Does this list of actions for each file specified
+        current_addr = file['url'] #Parses the URL of the file to be downloaded
+        current_dir = file['dir'] #Parses the directory the file is to be downloaded to
+        remote_name = current_addr.rsplit('/', 1)[-1] #Determines the name of the remote file
+        local_name = f'{name}_{remote_name}' #Generates the name to be used for the file
+        output_addr = os.path.join(name, current_dir, local_name) #Generates the full output path for the file
+
+        mt.goget(current_addr, output_addr) #Calls goget to retrieve the specified file
+
+        mt.megamd5(output_addr) #Calls megamd5 to generates the MD5 sum for the file
+    
+    output('All done!')

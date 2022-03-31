@@ -16,41 +16,21 @@ directories: #These are the directories for DIRector to create
 files: #These are files for gogetter to go get
 
   -
-    url: 'http://212.183.159.230/100MB.zip' #URL of the file to be downloaded
+    url: 'http://212.183.159.230/10MB.zip' #URL of the file to be downloaded
     dir: 'Cam_1' #Directory to store the file in
 
   -
-    url: 'http://212.183.159.230/100MB.zip'
-    dir: 'Cam_1'
-
-  -
-    url: 'http://212.183.159.230/100MB.zip'
+    url: 'http://212.183.159.230/10MB.zip'
     dir: 'Cam_2'
 
   -
-    url: 'http://212.183.159.230/100MB.zip'
-    dir: 'Cam_2'
-
-  -
-    url: 'http://212.183.159.230/100MB.zip'
+    url: 'http://212.183.159.230/10MB.zip'
     dir: 'Cam_3'
 
   -
-    url: 'http://212.183.159.230/100MB.zip'
-    dir: 'Cam_3'
-
-  -
-    url: 'http://212.183.159.230/100MB.zip'
+    url: 'http://212.183.159.230/10MB.zip'
     dir: 'Cam_4'
 
   -
-    url: 'http://212.183.159.230/100MB.zip'
-    dir: 'Cam_4'
-
-  -
-    url: 'http://212.183.159.230/100MB.zip'
-    dir: 'PGM'
-
-  -
-    url: 'http://212.183.159.230/100MB.zip'
+    url: 'http://212.183.159.230/10MB.zip'
     dir: 'PGM'
