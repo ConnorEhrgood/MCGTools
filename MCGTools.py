@@ -40,7 +40,7 @@ def megamd5(input_file): #This function generates the MD5 hash of an input file 
     output_path = os.path.join(file_path, f'{file_base}.md5') #Creates the output path for the MD5 hash; i.e. '/home/directory/file.md5'
     file_size = os.path.getsize(input_file) #Gets the file size of the input file so progress can be tracked
 
-    output(f'Generating MD5. Input: {input_file}   Output: {output_file}')
+    output(f'Generating MD5. Input: {input_file}   Output: {output_path}')
 
     chunk_count = 0 #Number of chunks processed; Used for progress calculation
     current_prog = 0 #Progress value that is printed to terminal
