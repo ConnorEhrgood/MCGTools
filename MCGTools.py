@@ -5,7 +5,7 @@ def output(data, end = '\n'): #Function to print data to console ONLY if process
         print(data, end = end)
 
 
-def goget(addr, output_file): #This function downloads files from HTTP destinations from a list of addresses to locations specified in that list
+def goget(addr, output_file): #This function downloads files from HTTP destinations
     import requests
 
     head = requests.head(addr)
@@ -28,10 +28,10 @@ def goget(addr, output_file): #This function downloads files from HTTP destinati
                 if current_prog != prog: #Reduces number of prints to only what is necessary
                     current_prog = prog
                     output(f'{current_prog}% Complete.', end = '\r') #Prints current progress percentage
-    output("Download complete!")
+    output(f'{output_file} - Download complete!')
 
 
-def megamd5(input_file): #This function generates the MD5 hash of an input file ans saves it to a .md5 file with the same name in the same directory as the input file
+def megamd5(input_file): #This function generates the MD5 hash of an input file and saves it to a .md5 file with the same name in the same directory as the input file
     import os, hashlib
 
     file_name = os.path.split(input_file)[1]  #Creates a string of the input filename without the path; i.e. 'file.txt'
@@ -45,10 +45,10 @@ def megamd5(input_file): #This function generates the MD5 hash of an input file 
     chunk_count = 0 #Number of chunks processed; Used for progress calculation
     current_prog = 0 #Progress value that is printed to terminal
     with open(input_file, 'rb') as f:
-        file_md5 = hashlib.md5()
+        hash = hashlib.md5()
 
         while chunk := f.read(16384): #Computes MD5 hash in chunks to avoid loading entire file into ram
-            file_md5.update(chunk)
+            hash.update(chunk)
 
             chunk_count += 1 #Increments chunck count
             prog = round(((chunk_count * 16384) / file_size)*100, 1) #Calculates progress percentage
@@ -56,12 +56,13 @@ def megamd5(input_file): #This function generates the MD5 hash of an input file 
                 current_prog = prog
                 output(f'{current_prog}% Complete.', end = '\r') #Prints current progress percentage
 
-    hexi_sum = file_md5.hexdigest() #Saves MD5 hash as string
+    hexi_hash = hash.hexdigest() #Saves MD5 hash as string
 
     with open(output_path, 'w') as o:
-        o.write(f'{hexi_sum} {file_name}') #Writes MD5 hash and file name into a text document in a format that md5sum can verify
+        o.write(f'{hexi_hash} {file_name}') #Writes MD5 hash and file name into a text document in a format that md5sum can verify
 
-    output('MD5 calculation complete!')
+    output(f'{output_path} - MD5 calculation complete!')
+    return(hexi_hash)
 
 def director(path, dirs_list): #This function builds directory trees based upon nested lists
     import os
@@ -73,3 +74,18 @@ def director(path, dirs_list): #This function builds directory trees based upon 
         if dirs: #Checks to see if any sub-directories have been specified
             subdirs = dirs_list[dirs] #Parses the subdirectories into a new list to be passed into this function again
             director(dir_path, subdirs) #Call to this function to make sub-directiories and any of their sub-directories...
+
+def remmd5(addr): #This function generates the MD5 hash of a remote file on an http server
+    import requests, hashlib
+
+    with requests.get(addr, stream=True) as r: #Gets in streaming mode to prevent entire file being copied to RAM
+        r.raise_for_status() #Outputs debugging data
+
+        hash = hashlib.md5()
+
+        for chunk in r.iter_content(chunk_size=8192): #Copies data chunk by chunk
+            hash.update(chunk)
+
+    hexi_hash = hash.hexdigest() #Saves MD5 hash as string
+
+    return(hexi_hash)

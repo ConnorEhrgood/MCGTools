@@ -1,0 +1,10 @@
+.DS_Store
+
+normal_config.yaml
+tmpconfig.yaml
+threadedtest.yaml
+threadedtest2.yaml
+__pycache__/
+TestFiles/
+Configs/
+/CLITools/KiPro Commands
