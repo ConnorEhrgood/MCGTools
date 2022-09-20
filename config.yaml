@@ -1,19 +1,32 @@
 #This is an example of what an MCGTools config might look like
 
-directories: #These are the directories for DIRector to create
-  Cam_1: []
-  Cam_2: []
-  Cam_3: []
-  Cam_4: []
-  Cam_5: []
-  PGM: []
-  HELO: []
-  Stream: 
-    vimeo: []
-    youtube: []
+############################
+# Common Section           #
+############################
+
+working_directory: '/volume1/automations/completed_test' # [OPTIONAL]
+
+############################
+# GoGetter Section         #
+############################
+
+gogetter_working_directory: '/volume1/automations/completed_test' #[OPTIONAL] This is the file location GoGetter will build the new directory tree. THIS WILL OVERRIDE THE COMMON WORKING DIRECTORY.
+
+gogetter_directories: #These are the directories for GoGetter to create
+  Video:
+    Cam_1: []
+    Cam_2: []
+    Cam_3: []
+    Cam_4: []
+    Cam_5: []
+    PGM: []
+    HELO: []
+    Stream: 
+      vimeo: []
+      youtube: []
 
 
-files: #These are files for gogetter to go get
+gogetter_files: #These are files for gogetter to go get
 
   -
     url: 'http://212.183.159.230/10MB.zip' #URL of the file to be downloaded
@@ -34,3 +47,13 @@ files: #These are files for gogetter to go get
   -
     url: 'http://212.183.159.230/10MB.zip'
     dir: 'PGM'
+
+
+
+############################
+# PTCopy Section           #
+############################
+
+ptcopy_old_directory: '/volume1/automations/test' #This is the file location PTCopy will look for show folders in
+ptcopy_working_directory: '/volume1/automations/completed_test2' # [OPTIONAL] This is the file location PTCopy will build the new directory tree.  THIS WILL OVERRIDE THE COMMON WORKING DIRECTORY.
+ptcopy_directory_name: 'Audio' #This is the subdirectory that PTCopy will copy the tree into

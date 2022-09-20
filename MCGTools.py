@@ -6,7 +6,7 @@ def output(data, end = '\n'): #Function to print data to console ONLY if process
 
 
 
-def goget(addr, output_file): #This function downloads files from HTTP destinations
+def goget(addr, output_file): # This function downloads files from HTTP destinations
     import requests
 
     head = requests.head(addr)
@@ -33,7 +33,7 @@ def goget(addr, output_file): #This function downloads files from HTTP destinati
 
 
 
-def megamd5(input_file, make_file=True): #This function generates the MD5 hash of an input file and saves it to a .md5 file with the same name in the same directory as the input file
+def megamd5(input_file, make_file=True): # This function generates the MD5 hash of an input file and saves it to a .md5 file with the same name in the same directory as the input file
     import os, hashlib
 
     file_name = os.path.split(input_file)[1]  #Creates a string of the input filename without the path; i.e. 'file.txt'
@@ -69,11 +69,11 @@ def megamd5(input_file, make_file=True): #This function generates the MD5 hash o
             o.write(f'{hexi_hash} {file_name}') #Writes MD5 hash and file name into a text document in a format that md5sum can verify
 
     output(f'{output_file} - MD5 calculation complete!')
-    return(hexi_hash)
+    return(hexi_hash) # Return hash to be use in the function that called this one
 
 
 
-def director(path, dirs_list): #This function builds directory trees based upon nested lists
+def director(path, dirs_list): # This function builds directory trees based upon a dictionary
     import os
 
     for dirs in dirs_list: 
@@ -86,7 +86,26 @@ def director(path, dirs_list): #This function builds directory trees based upon 
 
 
 
-def remmd5(addr): #This function generates the MD5 hash of a remote file on an http server
+def get_files_list(directory): # This function finds all files in a directory tree and returns them in a list with their full path
+    import os
+
+    dir_ls = os.listdir(directory) # Generates a list representing the specified directory
+    files_ls = list() # Declares a list to be used for the files found
+
+    for d in dir_ls:
+
+        path = os.path.join(directory, d) 
+
+        if os.path.isdir(path): #Checks to see if current item in list is a directory
+            files_ls = files_ls + get_files_list(path) # If it is, call this function in that directory to check for files. Add any files found to the list.
+        else:
+            files_ls.append(path) # Otherwise, it must be a file, so add it to the list
+                
+    return files_ls # Return the list of files
+
+
+
+def remmd5(addr): # This function generates the MD5 hash of a remote file on an http server
     import requests, hashlib
 
     with requests.get(addr, stream=True) as r: #Gets in streaming mode to prevent entire file being copied to RAM
@@ -103,22 +122,19 @@ def remmd5(addr): #This function generates the MD5 hash of a remote file on an h
 
 
 
-def gogetter(name, config_file): #This function downloads files from HTTP destinations, generated MD5 hashes of those files, and verifies the integrity of those files against the origional
+def gogetter(name, config_file, dir=''): # This function downloads files from HTTP destinations, generated MD5 hashes of those files, and verifies the integrity of those files against the origional
     import os, sys, yaml, requests #Imports necessary libraries
-    import MCGTools as mt #Imports MCGTools (as mt) so we can use it's functions (goget, DIRector, megamd5, output)
     from threading import Thread
-
-    output = mt.output #Lets us call output without "mt." at the beginning
 
     directory = os.path.join(os.getcwd(), name) #Generates the directory path based upon the current working directory and the name provided
 
     with open(config_file, 'r') as config_open: #Opens the config file provided
         config = yaml.safe_load(config_open) #Saves the contents of the config file as a list
 
-    files = config['files'] #Parses the files to be downloaded into a list
-    dir_list = config['directories'] #Parses the directories to be created into a nested list
+    files = config['gogetter_files'] #Parses the files to be downloaded into a list
+    dir_list = config['gogetter_directories'] #Parses the directories to be created into a nested list
 
-    mt.director(directory, dir_list) #Calls DIRector to create the specified folder tree
+    director(directory, dir_list) #Calls DIRector to create the specified folder tree
 
 
 
@@ -131,13 +147,13 @@ def gogetter(name, config_file): #This function downloads files from HTTP destin
     
         while(file_hash != verify_hash):
 
-            mt.goget(current_addr, output_addr) #Calls goget to retrieve the specified file
+            goget(current_addr, output_addr) #Calls goget to retrieve the specified file
 
-            file_hash = mt.megamd5(output_addr) #Calls megamd5 to generates the MD5 hash for the file
+            file_hash = megamd5(output_addr) #Calls megamd5 to generates the MD5 hash for the file
 
             output(f'{output_addr} - Verifying...')
 
-            verify_hash = mt.remmd5(current_addr) #Generates an MD5 hash of the remote file
+            verify_hash = remmd5(current_addr) #Generates an MD5 hash of the remote file
             output(f'{output_addr} - File Hash: {file_hash}')
             output(f'{output_addr} - Verify Hash: {verify_hash}')
 
@@ -170,3 +186,69 @@ def gogetter(name, config_file): #This function downloads files from HTTP destin
 
     print('GoGetter Done!')
 
+
+
+def ptcopy(name, config_file, dir=''): # This function copies all files in a directory tree to an identical directory tree, appends a given name to the beginning of each file name, verifies the integrity of the data and generates an md5 hash for each file
+    import shutil, os, yaml, time
+
+    with open(config_file, 'r') as config_open: #Opens the config file provided
+        config = yaml.safe_load(config_open) #Saves the contents of the config file as a list
+
+    if dir: # If a directory was specified...
+        directory = dir # ... copy the tree to that directory
+
+    elif config['ptcopy_working_directory']: # ... or if a directory was specified in the config file...
+        directory = config['ptcopy_working_directory'] # ... copy the tree to that directory
+
+    elif config['working_directory']:
+        directory = config['working_directory']
+
+    else:
+        directory = os.path.join(os.getcwd()) #... Otherwise, generate the directory path based upon the current working directory
+
+    root_dir = 'PTCopy'
+    if config['ptcopy_directory_name']: # Checks wheter a directory name was specified...
+        root_dir = config['ptcopy_directory_name'] # If so, name the directory that.
+
+    old_dir = config['ptcopy_old_directory']
+    new_dir = os.path.join(directory, name, root_dir)
+
+    shutil.copytree(old_dir, new_dir)
+
+    output('Waiting for corruption (for testing)...')
+    time.sleep(20)
+
+    for new_file in get_files_list(new_dir):
+
+        old_file = new_file.replace(new_dir, old_dir)
+        output(f'Old File: {old_file} New File: {new_file}')
+
+        old_name = os.path.basename(new_file)
+        path_only = os.path.dirname(new_file)
+        new_name = f'{name}_{old_name}'
+        new_path = os.path.join(path_only, new_name)
+
+        os.rename(new_file, new_path)
+
+        new_file = new_path
+        
+        new_file_hash = megamd5(new_file)
+        output(new_file_hash)
+        old_file_hash = megamd5(old_file, make_file=False)
+        output(old_file_hash)
+
+        while new_file_hash != old_file_hash:
+            output(f'{new_file} - File issue detected. Retrying.')
+
+            file_base = os.path.splitext(new_file)[0]
+            os.remove(f'{file_base}.md5')
+            os.remove(new_file)
+
+            shutil.copy2(old_file, new_file)
+
+            new_file_hash = megamd5(new_file)
+            output(new_file_hash)
+            old_file_hash = megamd5(old_file, make_file=False)
+            output(old_file_hash)
+
+        output(f'{new_file} - File integrity verified. Finishing.')
