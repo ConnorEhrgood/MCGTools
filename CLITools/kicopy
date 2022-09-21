@@ -31,8 +31,8 @@ directory = os.path.join(os.getcwd(), name) #Generates the directory path based 
 with open(config_file, 'r') as config_open: #Opens the config file provided
     config = yaml.safe_load(config_open) #Saves the contents of the config file as a list
 
-files = config['files'] #Parses the files to be downloaded into a list
-dir_list = config['directories'] #Parses the directories to be created into a nested list
+files = config['gogetter_files'] #Parses the files to be downloaded into a list
+dir_list = config['gogetter_directories'] #Parses the directories to be created into a nested list
 
 mt.director(directory, dir_list) #Calls DIRector to create the specified folder tree
 
