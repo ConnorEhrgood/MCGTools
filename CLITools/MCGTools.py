@@ -1,8 +1,8 @@
-def output(data, end = '\n'): #Function to print data to console ONLY if process is in the foreground
+def output(*args, **kwargs): #Function to print data to console ONLY if process is in the foreground
     import os, sys
 
     if os.getpgrp() == os.tcgetpgrp(sys.stdout.fileno()): #Checks wheter this process is the process in the foreground of the terminal
-        print(data, end = end)
+        print(*args, **kwargs)
 
 
 
