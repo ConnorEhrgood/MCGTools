@@ -86,6 +86,25 @@ def director(path, dirs_list): #This function builds directory trees based upon 
 
 
 
+def get_files_list(directory): # This function finds all files in a directory tree and returns them in a list with their full path
+    import os
+
+    dir_ls = os.listdir(directory) # Generates a list representing the specified directory
+    files_ls = list() # Declares a list to be used for the files found
+
+    for d in dir_ls:
+
+        path = os.path.join(directory, d) 
+
+        if os.path.isdir(path): #Checks to see if current item in list is a directory
+            files_ls = files_ls + get_files_list(path) # If it is, call this function in that directory to check for files. Add any files found to the list.
+        else:
+            files_ls.append(path) # Otherwise, it must be a file, so add it to the list
+                
+    return files_ls # Return the list of files
+
+
+
 def remmd5(addr): #This function generates the MD5 hash of a remote file on an http server
     import requests, hashlib
 
