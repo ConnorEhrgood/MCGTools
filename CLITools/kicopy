@@ -72,6 +72,8 @@ def move(server, server_files, name): #The function that each thread will run
             if(file_hash == verify_hash): #Checks to make sure the hash of the local file and remote file are the same
                 output(f'{output_addr} - File integrity verified. Finishing.')
             else:
+                os.remove(output_addr)
+                os.remove(os.path.join(os.path.splitext(output_addr)[0], '.md5'))
                 output(f'{output_addr} - File issue detected. Retrying.')
 
     output(f'{server} - Setting media state to RECORD-PLAY:')
@@ -81,7 +83,7 @@ def move(server, server_files, name): #The function that each thread will run
 
 servers = {}
 
-for file in files: #Generates a list of files for each server to download sequentially. Prevents KiPros from killing connections when multiple requests are made.
+for file in files: #Generates a list of files for each server fro the threads to download sequentially. Prevents KiPros from killing connections when multiple requests are made.
     current_addr = file['url'] #Parses the URL of the file to be downloaded
     server = current_addr.rsplit('/', 2)[0] #Determines what the address of the server is
     current_dir = file['dir'] #Parses the directory the file is to be downloaded to
