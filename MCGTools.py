@@ -252,3 +252,107 @@ def ptcopy(name, config_file, dir=''): # This function copies all files in a dir
             output(old_file_hash)
 
         output(f'{new_file} - File integrity verified. Finishing.')
+
+
+
+def kicopy(name, config_file, dir=''):
+    import os, sys, yaml, requests #Imports necessary libraries
+    from threading import Thread
+
+    print('An instance of KiCopy has been started.')
+
+
+    with open(config_file, 'r') as config_open: #Opens the config file provided
+        config = yaml.safe_load(config_open) #Saves the contents of the config file as a list
+
+    if dir: # If a directory was specified...
+        root_dir = dir # ... copy the tree to that directory
+
+    elif config['gogetter_working_directory']: # ... or if a directory was specified in the config file...
+        root_dir = config['gogetter_working_directory'] # ... copy the tree to that directory
+
+    elif config['working_directory']:
+        root_dir = config['working_directory']
+
+    else:
+        root_dir = os.path.join(os.getcwd()) #... Otherwise, generate the directory path based upon the current working directory
+
+    directory = os.path.join(root_dir, name) #Generates the full directory path
+    output(directory)
+
+    files = config['gogetter_files'] #Parses the files to be downloaded into a list
+    dir_list = config['gogetter_directories'] #Parses the directories to be created into a nested list
+
+    director(directory, dir_list) #Calls DIRector to create the specified folder tree
+
+
+
+    def move(server, server_files, name): #The function that each thread will run
+
+        output(f'{server} - Thread initialized.')
+
+        output(f'{server} - Setting media state to DATA-LAN:')
+        output(str(requests.get(f'{server}/config', params = 'action=set&paramid=eParamID_MediaState&value=1', timeout = 10))) #Makes the media state call to the KiPro and prints the response
+
+        for file in server_files: 
+
+            current_addr = file['url'] #Parses url form list of files
+            current_dir = file['dir'] #Parses directory from list of files
+            remote_name = current_addr.rsplit('/', 1)[-1] #Determines the name of the remote file
+            local_name = f'{name}_{remote_name}' #Generates the name to be used for the file
+            output_addr = os.path.join(directory, current_dir, local_name) #Generates the full output path for the file
+
+
+            file_hash = 'file_hash' #Defining the hash strings and setting them to arbitrary, non-equal values
+            verify_hash = 'verify_hash'
+    
+            while(file_hash != verify_hash): #If the hashs of the downloaded file and the remote file aren't the same, keep doing this
+
+                goget(current_addr, output_addr) #Calls goget to retrieve the specified file
+
+                file_hash = megamd5(output_addr) #Calls megamd5 to generates the MD5 hash for the file
+
+                output(f'{output_addr} - Verifying...')
+
+                verify_hash = remmd5(current_addr) #Generates an MD5 hash of the remote file
+                output(f'{output_addr} - File Hash: {file_hash}')
+                output(f'{output_addr} - Verify Hash: {verify_hash}')
+
+                if(file_hash == verify_hash): #Checks to make sure the hash of the local file and remote file are the same
+                    output(f'{output_addr} - File integrity verified. Finishing.')
+                else:
+                    os.remove(output_addr)
+                    os.remove(os.path.join(os.path.splitext(output_addr)[0], '.md5'))
+                    output(f'{output_addr} - File issue detected. Retrying.')
+
+        output(f'{server} - Setting media state to RECORD-PLAY:')
+        output(str(requests.get(f'{server}/config', params = 'action=set&paramid=eParamID_MediaState&value=0', timeout = 10))) #Makes the media state call to the KiPro and prints the response
+
+        output(f'{server} - Completed!')
+
+    servers = {}
+
+    for file in files: #Generates a list of files for each server fro the threads to download sequentially. Prevents KiPros from killing connections when multiple requests are made.
+        current_addr = file['url'] #Parses the URL of the file to be downloaded
+        server = current_addr.rsplit('/', 2)[0] #Determines what the address of the server is
+        current_dir = file['dir'] #Parses the directory the file is to be downloaded to
+
+        if server in servers:
+            servers[server].append(file) #If the server for this particular file is already in the list of servers, just append the file to the list for that server
+        else:
+            servers[server] = [file] #If the server for this particular file is not in the list of servers, add the server and append the file to it's list
+
+    threads = []
+
+    for server in servers: #Spins up a thread to download the files from each server in parrallel
+
+        server_files = servers[server]
+
+        t = Thread(target=move, args=(server, server_files, name, )) #Defining thread
+        threads.append(t) #Adding to the list of threads so it can be joined later
+        t.start() #Starts the thread
+
+    for t in threads: #Wait for all threads to complete
+        t.join()
+
+    print('\x1b[6;30;42m' + 'All Done!' + '\x1b[0m')
