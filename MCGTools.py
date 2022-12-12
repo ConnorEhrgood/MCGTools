@@ -1,5 +1,6 @@
 from pymongo import MongoClient
 from tenacity import *
+import os
 
 client = MongoClient(os.environ.get('DB_CONNECT_STRING'))
 db = client[os.environ.get('DB_NAME')]
