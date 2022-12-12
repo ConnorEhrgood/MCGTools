@@ -1,3 +1,9 @@
+from pymongo import MongoClient
+from tenacity import *
+
+client = MongoClient(os.environ.get('DB_CONNECT_STRING'))
+db = client[os.environ.get('DB_NAME')]
+
 def output(*args, **kwargs): #Function to print data to console ONLY if process is in the foreground
     import os, sys
 
@@ -5,11 +11,14 @@ def output(*args, **kwargs): #Function to print data to console ONLY if process 
         print(*args, **kwargs)
 
 
-
+@retry(reraise=True, stop=stop_after_attempt(3), wait=wait_fixed(2))
 def goget(addr, output_file): # This function downloads files from HTTP destinations
     import requests
 
-    head = requests.head(addr)
+    try:
+        head = requests.head(addr)
+    except Exception:
+        raise Exception('Connection error. Server not found or file may not exist.')
     file_type = head.headers['content-type'] #Gets file type and stores as string
     file_size = int(head.headers['content-length']) #Gets file size (in bytes) and stores as int
     output(f'Downloading from {addr} as {output_file}')
@@ -18,18 +27,23 @@ def goget(addr, output_file): # This function downloads files from HTTP destinat
     
     chunk_count = 0 #Counts how many chunks have been downloaded to calculate progress
     current_prog = 0 #Progress value that is printed to terminal
-    with requests.get(addr, stream=True) as r: #Gets in streaming mode to prevent entire file being copied to RAM
-        r.raise_for_status() #Outputs debugging data
+    try:
+        with requests.get(addr, stream=True) as r: #Gets in streaming mode to prevent entire file being copied to RAM
+            r.raise_for_status() #Outputs debugging data
 
-        with open(output_file, 'wb') as f: #Opens output file to begin copying data to it
-            for chunk in r.iter_content(chunk_size=8192): #Copies data chunk by chunk
-                f.write(chunk)
-                chunk_count += 1 #Increments chunck count
-                prog = round(((chunk_count * 8192) / file_size)*100, 1) #Calculates progress percentage
-                if current_prog != prog: #Reduces number of prints to only what is necessary
-                    current_prog = prog
-                    output(f'{output_file} - Download {current_prog}% complete.', end = '\r') #Prints current progress percentage
-    output(f'{output_file} - Download complete!')
+
+
+            with open(output_file, 'wb') as f: #Opens output file to begin copying data to it
+                for chunk in r.iter_content(chunk_size=8192): #Copies data chunk by chunk
+                    f.write(chunk)
+                    chunk_count += 1 #Increments chunck count
+                    prog = round(((chunk_count * 8192) / file_size)*100, 1) #Calculates progress percentage
+                    if current_prog != prog: #Reduces number of prints to only what is necessary
+                        current_prog = prog
+                        output(f'{output_file} - Download {current_prog}% complete.', end = '\r') #Prints current progress percentage
+        output(f'{output_file} - Download complete!')
+    except Exception:
+        raise Exception('Download error.')
 
 
 
@@ -103,8 +117,7 @@ def get_files_list(directory): # This function finds all files in a directory tr
                 
     return files_ls # Return the list of files
 
-
-
+@retry(reraise=True, stop=stop_after_attempt(3), wait=wait_fixed(2))
 def remmd5(addr): # This function generates the MD5 hash of a remote file on an http server
     import requests, hashlib
 
@@ -122,6 +135,41 @@ def remmd5(addr): # This function generates the MD5 hash of a remote file on an 
 
 
 
+def make_xfer_entry(name, type): #This function adds a transfer entry in the database and returns the entry ID
+    from datetime import datetime
+    transfer = {
+        'name' : name,
+        'type' : type,
+        'init_time' : datetime.now(),
+        'status' : 'Starting...',
+    }
+
+    entry = db.transfers.insert_one(transfer).inserted_id
+    return entry
+
+
+
+def update_xfer_status(xfer_id, status): #This function updates the status of a transfer entry in the database
+    db.transfers.update_one({'_id': xfer_id },{ '$set': { 'status': status } })
+
+
+
+def add_config_to_entry(xfer_id, config): #This function adds the parsed config to a transfer entry in the database
+    db.transfers.update_one({'_id': xfer_id },{ '$set': { 'config': config } })
+
+
+
+def add_error_to_entry(xfer_id, file, error): #This function adds an error to a transfer entry in the database
+    from datetime import datetime
+    error_object = {
+        'file' : file,
+        'error' : error,
+        'time' : datetime.now()
+    }
+    db.transfers.update_one({'_id': xfer_id },{ '$push': { 'errors': error_object } })
+
+
+### TO-DO - Add error handling and database interaction to GoGetter ###
 def gogetter(name, config_file, dir=''): # This function downloads files from HTTP destinations, generated MD5 hashes of those files, and verifies the integrity of those files against the origional
     import os, sys, yaml, requests #Imports necessary libraries
     from threading import Thread
@@ -191,67 +239,85 @@ def gogetter(name, config_file, dir=''): # This function downloads files from HT
 def ptcopy(name, config_file, dir=''): # This function copies all files in a directory tree to an identical directory tree, appends a given name to the beginning of each file name, verifies the integrity of the data and generates an md5 hash for each file
     import shutil, os, yaml, time
 
-    with open(config_file, 'r') as config_open: #Opens the config file provided
-        config = yaml.safe_load(config_open) #Saves the contents of the config file as a list
+    entry = make_xfer_entry(name, 'PTCopy')
 
-    if dir: # If a directory was specified...
-        directory = dir # ... copy the tree to that directory
+    try:
+        with open(config_file, 'r') as config_open: #Opens the config file provided
+            config = yaml.safe_load(config_open) #Saves the contents of the config file as a list
+    
+        if dir: # If a directory was specified...
+            directory = dir # ... copy the tree to that directory
 
-    elif config['ptcopy_working_directory']: # ... or if a directory was specified in the config file...
-        directory = config['ptcopy_working_directory'] # ... copy the tree to that directory
+        elif 'ptcopy_working_directory' in config: # ... or if a directory was specified in the config file...
+            directory = config['ptcopy_working_directory'] # ... copy the tree to that directory
 
-    elif config['working_directory']:
-        directory = config['working_directory']
+        elif 'working_directory' in config:
+            directory = config['working_directory']
 
-    else:
-        directory = os.path.join(os.getcwd()) #... Otherwise, generate the directory path based upon the current working directory
+        else:
+            directory = os.path.join(os.getcwd()) #... Otherwise, generate the directory path based upon the current working directory
 
-    root_dir = 'PTCopy'
-    if config['ptcopy_directory_name']: # Checks wheter a directory name was specified...
-        root_dir = config['ptcopy_directory_name'] # If so, name the directory that.
+        root_dir = 'PTCopy'
+        if config['ptcopy_directory_name']: # Checks wheter a directory name was specified...
+            root_dir = config['ptcopy_directory_name'] # If so, name the directory that.
 
-    old_dir = config['ptcopy_old_directory']
+        old_dir = config['ptcopy_old_directory']
+    
+    except Exception:
+        update_xfer_status(entry, 'Failed - Config File Error')
+        exit(1)
+
+    add_config_to_entry(entry, config) #Adds the config details to the database entry
+
     new_dir = os.path.join(directory, name, root_dir)
 
-    shutil.copytree(old_dir, new_dir)
+    update_xfer_status(entry, 'Copying Files...')
+    try:
+        shutil.copytree(old_dir, new_dir) #Coptis the files from the old directory to the new one
+    except Exception:
+        update_xfer_status(entry, 'Failed - Transfer Error')
+        exit(1)
 
-    output('Waiting for corruption (for testing)...')
-    time.sleep(20)
+    update_xfer_status(entry, 'Processing...')
+    try:
+        for new_file in get_files_list(new_dir): #For all files in the new directory...
 
-    for new_file in get_files_list(new_dir):
+            old_file = new_file.replace(new_dir, old_dir) #Figure out where the file came from so it can be verified
+            output(f'Old File: {old_file} New File: {new_file}')
 
-        old_file = new_file.replace(new_dir, old_dir)
-        output(f'Old File: {old_file} New File: {new_file}')
+            old_name = os.path.basename(new_file) #Find the origional name of the file
+            path_only = os.path.dirname(new_file) #Find the file path to the new file
+            new_name = f'{name}_{old_name}' #Append the transfer name to the file
+            new_path = os.path.join(path_only, new_name) #Generate the new full file path
 
-        old_name = os.path.basename(new_file)
-        path_only = os.path.dirname(new_file)
-        new_name = f'{name}_{old_name}'
-        new_path = os.path.join(path_only, new_name)
-
-        os.rename(new_file, new_path)
-
-        new_file = new_path
+            os.rename(new_file, new_path) #Rename the file
+            new_file = new_path
         
-        new_file_hash = megamd5(new_file)
-        output(new_file_hash)
-        old_file_hash = megamd5(old_file, make_file=False)
-        output(old_file_hash)
-
-        while new_file_hash != old_file_hash:
-            output(f'{new_file} - File issue detected. Retrying.')
-
-            file_base = os.path.splitext(new_file)[0]
-            os.remove(f'{file_base}.md5')
-            os.remove(new_file)
-
-            shutil.copy2(old_file, new_file)
-
-            new_file_hash = megamd5(new_file)
+            new_file_hash = megamd5(new_file) #Hash the new file
             output(new_file_hash)
-            old_file_hash = megamd5(old_file, make_file=False)
+            old_file_hash = megamd5(old_file, make_file=False) #Hash the old file without generating the .md5 file; for verificatition 
             output(old_file_hash)
 
-        output(f'{new_file} - File integrity verified. Finishing.')
+            while new_file_hash != old_file_hash: #If the hashes do not match
+                output(f'{new_file} - File issue detected. Retrying.')
+
+                file_base = os.path.splitext(new_file)[0]
+                os.remove(f'{file_base}.md5') #Remove the generated MD5 file
+                os.remove(new_file) #Remove the copied file
+
+                shutil.copy2(old_file, new_file) #Copy the individual file again
+
+                new_file_hash = megamd5(new_file) #Hash the new copy of the file
+                output(new_file_hash)
+                old_file_hash = megamd5(old_file, make_file=False)
+                output(old_file_hash) #Hash the old file without generating the .md5 file; for verificatition
+
+            output(f'{new_file} - File integrity verified. Finishing.')
+    except Exception:
+        update_xfer_status(entry, 'Failed - Rename or Verify Error')
+        exit(1)
+
+    update_xfer_status(entry, 'Complete!')
 
 
 
@@ -261,72 +327,125 @@ def kicopy(name, config_file, dir=''):
 
     print('An instance of KiCopy has been started.')
 
+    entry = make_xfer_entry(name, 'KiCopy')
 
-    with open(config_file, 'r') as config_open: #Opens the config file provided
-        config = yaml.safe_load(config_open) #Saves the contents of the config file as a list
+    try:
+        with open(config_file, 'r') as config_open: #Opens the config file provided
+            config = yaml.safe_load(config_open) #Saves the contents of the config file as a list
 
-    if dir: # If a directory was specified...
-        root_dir = dir # ... copy the tree to that directory
+        if dir: # If a directory was specified...
+            root_dir = dir # ... copy the tree to that directory
 
-    elif config['gogetter_working_directory']: # ... or if a directory was specified in the config file...
-        root_dir = config['gogetter_working_directory'] # ... copy the tree to that directory
+        elif 'gogetter_working_directory' in config: # ... or if a directory was specified in the config file...
+            root_dir = config['gogetter_working_directory'] # ... copy the tree to that directory
 
-    elif config['working_directory']:
-        root_dir = config['working_directory']
+        elif 'working_directory' in config:
+            root_dir = config['working_directory']
 
-    else:
-        root_dir = os.path.join(os.getcwd()) #... Otherwise, generate the directory path based upon the current working directory
+        else:
+            root_dir = os.path.join(os.getcwd()) #... Otherwise, generate the directory path based upon the current working directory
+
+        files = config['gogetter_files'] #Parses the files to be downloaded into a list
+
+    except Exception:
+        update_xfer_status(entry, 'Failed - Config File Error')
+        exit(1)
+    
+    add_config_to_entry(entry, config) #Adds the config details to the database entry
 
     directory = os.path.join(root_dir, name) #Generates the full directory path
     output(directory)
+    try:
+        os.makedirs(directory)
+    except FileExistsError:
+        update_xfer_status(entry, 'Failed - Root Directory Already Exists')
+        exit(1)
+    except Exception:
+        update_xfer_status(entry, 'Failed - Root Directory Error')
+        exit(1)
 
-    files = config['gogetter_files'] #Parses the files to be downloaded into a list
-    dir_list = config['gogetter_directories'] #Parses the directories to be created into a nested list
-
-    director(directory, dir_list) #Calls DIRector to create the specified folder tree
-
+    if 'gogetter_directories' in config:
+        try:
+            dir_list = config['gogetter_directories'] #Parses the directories to be created into a nested list
+            director(directory, dir_list) #Calls DIRector to create the specified folder tree
+        except Exception:
+            update_xfer_status(entry, 'Failed - Directory Tree Error')
+            exit(1)
 
 
     def move(server, server_files, name): #The function that each thread will run
 
         output(f'{server} - Thread initialized.')
 
-        output(f'{server} - Setting media state to DATA-LAN:')
-        output(str(requests.get(f'{server}/config', params = 'action=set&paramid=eParamID_MediaState&value=1', timeout = 10))) #Makes the media state call to the KiPro and prints the response
+        try:
+            output(f'{server} - Setting media state to DATA-LAN:')
+            output(str(requests.get(f'{server}/config', params = 'action=set&paramid=eParamID_MediaState&value=1', timeout = 10))) #Makes the media state call to the KiPro and prints the response
+        except:
+            pass
+            output(f'API Call to {server} failed. Continuing anyway...')
 
         for file in server_files: 
 
             current_addr = file['url'] #Parses url form list of files
             current_dir = file['dir'] #Parses directory from list of files
             remote_name = current_addr.rsplit('/', 1)[-1] #Determines the name of the remote file
-            local_name = f'{name}_{remote_name}' #Generates the name to be used for the file
+            file_name = remote_name
+            if 'file_name' in file:
+                file_name = file['file_name']
+            local_name = f'{name}_{file_name}' #Generates the name to be used for the file
             output_addr = os.path.join(directory, current_dir, local_name) #Generates the full output path for the file
 
 
             file_hash = 'file_hash' #Defining the hash strings and setting them to arbitrary, non-equal values
             verify_hash = 'verify_hash'
     
-            while(file_hash != verify_hash): #If the hashs of the downloaded file and the remote file aren't the same, keep doing this
+            while( file_hash != verify_hash): #If the hashs of the downloaded file and the remote file aren't the same, keep doing this
 
-                goget(current_addr, output_addr) #Calls goget to retrieve the specified file
+                try:
+                    head = requests.head(current_addr)
+                    if head.status_code != 200:
+                        raise Exception('Server returned status other than 200.')
+                    file_size = int(head.headers['content-length']) #Gets file size (in bytes) and stores as int
 
-                file_hash = megamd5(output_addr) #Calls megamd5 to generates the MD5 hash for the file
+                    goget(current_addr, output_addr) #Calls goget to retrieve the specified file
+                except Exception:
+                    add_error_to_entry(entry, file_name, 'Download Error - File Skipped')
+                    break
 
-                output(f'{output_addr} - Verifying...')
+                try:
+                    file_hash = megamd5(output_addr) #Calls megamd5 to generates the MD5 hash for the file
+                except Exception:
+                    add_error_to_entry(entry, file_name, 'Hashing Error - Verify Skipped')
+                    break
 
-                verify_hash = remmd5(current_addr) #Generates an MD5 hash of the remote file
-                output(f'{output_addr} - File Hash: {file_hash}')
-                output(f'{output_addr} - Verify Hash: {verify_hash}')
+                try:
+                    output(f'{output_addr} - Verifying...')
 
-                if(file_hash == verify_hash): #Checks to make sure the hash of the local file and remote file are the same
-                    output(f'{output_addr} - File integrity verified. Finishing.')
-                else:
-                    os.remove(output_addr)
-                    os.remove(os.path.join(os.path.splitext(output_addr)[0], '.md5'))
-                    output(f'{output_addr} - File issue detected. Retrying.')
+                    local_size = os.path.getsize(output_addr)
 
-        output(f'{server} - Setting media state to RECORD-PLAY:')
-        output(str(requests.get(f'{server}/config', params = 'action=set&paramid=eParamID_MediaState&value=0', timeout = 10))) #Makes the media state call to the KiPro and prints the response
+                    output(f'Local size: {local_size} Remote size: {file_size}')
+
+                    if(file_size == local_size):
+                        verify_hash = remmd5(current_addr) #Generates an MD5 hash of the remote file
+                        output(f'{output_addr} - File Hash: {file_hash}')
+                        output(f'{output_addr} - Verify Hash: {verify_hash}')
+
+                    if(file_hash == verify_hash): #Checks to make sure the hash of the local file and remote file are the same
+                        output(f'{output_addr} - File integrity verified. Finishing.')
+                    else:
+                        os.remove(output_addr)
+                        os.remove(f'{os.path.splitext(output_addr)[0]}.md5')
+                        output(f'{output_addr} - File issue detected. Retrying.')
+                except Exception:
+                    add_error_to_entry(entry, file_name, 'Verify Error - File Not Verified')
+                    break
+
+        try:
+            output(f'{server} - Setting media state to RECORD-PLAY:')
+            output(str(requests.get(f'{server}/config', params = 'action=set&paramid=eParamID_MediaState&value=0', timeout = 10))) #Makes the media state call to the KiPro and prints the response
+        except:
+            pass
+            output(f'API Call to {server} failed. Exiting without changing media state.')
 
         output(f'{server} - Completed!')
 
@@ -343,7 +462,7 @@ def kicopy(name, config_file, dir=''):
             servers[server] = [file] #If the server for this particular file is not in the list of servers, add the server and append the file to it's list
 
     threads = []
-
+    update_xfer_status(entry, 'Starting Threads...')
     for server in servers: #Spins up a thread to download the files from each server in parrallel
 
         server_files = servers[server]
@@ -352,7 +471,13 @@ def kicopy(name, config_file, dir=''):
         threads.append(t) #Adding to the list of threads so it can be joined later
         t.start() #Starts the thread
 
+    update_xfer_status(entry, 'Running...')
     for t in threads: #Wait for all threads to complete
         t.join()
+
+    if not 'errors' in db.transfers.find_one(entry): #Set final status on transfer entry
+        update_xfer_status(entry, 'Complete!')
+    else:
+        update_xfer_status(entry, 'Completed With Errors')
 
     print('\x1b[6;30;42m' + 'All Done!' + '\x1b[0m')
