@@ -32,8 +32,6 @@ def goget(addr, output_file): # This function downloads files from HTTP destinat
         with requests.get(addr, stream=True) as r: #Gets in streaming mode to prevent entire file being copied to RAM
             r.raise_for_status() #Outputs debugging data
 
-
-
             with open(output_file, 'wb') as f: #Opens output file to begin copying data to it
                 for chunk in r.iter_content(chunk_size=8192): #Copies data chunk by chunk
                     f.write(chunk)
@@ -160,14 +158,30 @@ def add_config_to_entry(xfer_id, config): #This function adds the parsed config 
 
 
 
-def add_error_to_entry(xfer_id, file, error): #This function adds an error to a transfer entry in the database
+def add_error_to_entry(xfer_id, file, source, error): #This function adds an error to a transfer entry in the database
     from datetime import datetime
     error_object = {
-        'file' : file,
+        'file' : file, 
+        'source': source,
         'error' : error,
         'time' : datetime.now()
     }
     db.transfers.update_one({'_id': xfer_id },{ '$push': { 'errors': error_object } })
+
+
+
+def add_file_to_entry(xfer_id, file, source, hash): #This function adds an error to a transfer entry in the database
+    from datetime import datetime
+    name = file.rsplit('/', 1)[-1] 
+    file_object = {
+        'name' : name, #The Brief name to be displayed in lists in the UI
+        'file' : file, #The full name and file location
+        'source': source,
+        'hash' : hash,
+        'time' : datetime.now()
+    }
+    db.transfers.update_one({'_id': xfer_id },{ '$push': { 'files': file_object } })
+
 
 
 ### TO-DO - Add error handling and database interaction to GoGetter ###
@@ -359,8 +373,14 @@ def kicopy(name, config_file, dir=''):
     try:
         os.makedirs(directory)
     except FileExistsError:
-        update_xfer_status(entry, 'Failed - Root Directory Already Exists')
-        exit(1)
+        if 'ignore_rootdir_error' in config:
+            output('Root directory exists, but ignore_rootdir_error is included in the config file. Continuing...')
+
+        else:
+            update_xfer_status(entry, 'Failed - Root Directory Already Exists')
+            exit(1)
+        
+        
     except Exception:
         update_xfer_status(entry, 'Failed - Root Directory Error')
         exit(1)
@@ -382,7 +402,6 @@ def kicopy(name, config_file, dir=''):
             output(f'{server} - Setting media state to DATA-LAN:')
             output(str(requests.get(f'{server}/config', params = 'action=set&paramid=eParamID_MediaState&value=1', timeout = 10))) #Makes the media state call to the KiPro and prints the response
         except:
-            pass
             output(f'API Call to {server} failed. Continuing anyway...')
 
         for file in server_files: 
@@ -410,13 +429,13 @@ def kicopy(name, config_file, dir=''):
 
                     goget(current_addr, output_addr) #Calls goget to retrieve the specified file
                 except Exception:
-                    add_error_to_entry(entry, file_name, 'Download Error - File Skipped')
+                    add_error_to_entry(entry, file_name, current_addr, 'Download Error - File Skipped')
                     break
 
                 try:
                     file_hash = megamd5(output_addr) #Calls megamd5 to generates the MD5 hash for the file
                 except Exception:
-                    add_error_to_entry(entry, file_name, 'Hashing Error - Verify Skipped')
+                    add_error_to_entry(entry, file_name, current_addr, 'Hashing Error - Verify Skipped')
                     break
 
                 try:
@@ -433,19 +452,19 @@ def kicopy(name, config_file, dir=''):
 
                     if(file_hash == verify_hash): #Checks to make sure the hash of the local file and remote file are the same
                         output(f'{output_addr} - File integrity verified. Finishing.')
+                        add_file_to_entry(entry, output_addr, current_addr, file_hash) # If the file copies successfullt and is verified, add it to the files list of the transfer
                     else:
                         os.remove(output_addr)
                         os.remove(f'{os.path.splitext(output_addr)[0]}.md5')
                         output(f'{output_addr} - File issue detected. Retrying.')
                 except Exception:
-                    add_error_to_entry(entry, file_name, 'Verify Error - File Not Verified')
+                    add_error_to_entry(entry, file_name, current_addr, 'Verify Error - File Not Verified')
                     break
 
         try:
             output(f'{server} - Setting media state to RECORD-PLAY:')
             output(str(requests.get(f'{server}/config', params = 'action=set&paramid=eParamID_MediaState&value=0', timeout = 10))) #Makes the media state call to the KiPro and prints the response
         except:
-            pass
             output(f'API Call to {server} failed. Exiting without changing media state.')
 
         output(f'{server} - Completed!')
