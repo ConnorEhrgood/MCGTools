@@ -1,18 +1,20 @@
+import os
+
 from pymongo import MongoClient
 from tenacity import *
-import os
 
 client = MongoClient(os.environ.get('DB_CONNECT_STRING'))
 db = client[os.environ.get('DB_NAME')]
 
 def output(*args, **kwargs): #Function to print data to console ONLY if process is in the foreground
-    import os, sys
+    import os
+    import sys
 
     if os.getpgrp() == os.tcgetpgrp(sys.stdout.fileno()): #Checks wheter this process is the process in the foreground of the terminal
         print(*args, **kwargs)
 
 
-@retry(reraise=True, stop=stop_after_attempt(3), wait=wait_fixed(2))
+@retry(reraise=True, stop=stop_after_attempt(5), wait=wait_fixed(15))
 def goget(addr, output_file): # This function downloads files from HTTP destinations
     import requests
 
@@ -47,7 +49,8 @@ def goget(addr, output_file): # This function downloads files from HTTP destinat
 
 
 def megamd5(input_file, make_file=True): # This function generates the MD5 hash of an input file and saves it to a .md5 file with the same name in the same directory as the input file
-    import os, hashlib
+    import hashlib
+    import os
 
     file_name = os.path.split(input_file)[1]  #Creates a string of the input filename without the path; i.e. 'file.txt'
     file_base = os.path.splitext(file_name)[0] #Creates a string of the base of the input filename without the extension; i.e. 'file'
@@ -116,9 +119,11 @@ def get_files_list(directory): # This function finds all files in a directory tr
                 
     return files_ls # Return the list of files
 
-@retry(reraise=True, stop=stop_after_attempt(3), wait=wait_fixed(2))
+@retry(reraise=True, stop=stop_after_attempt(5), wait=wait_fixed(15))
 def remmd5(addr): # This function generates the MD5 hash of a remote file on an http server
-    import requests, hashlib
+    import hashlib
+
+    import requests
 
     with requests.get(addr, stream=True) as r: #Gets in streaming mode to prevent entire file being copied to RAM
         r.raise_for_status() #Outputs debugging data
@@ -158,10 +163,10 @@ def add_config_to_entry(xfer_id, config): #This function adds the parsed config 
 
 
 
-def add_error_to_entry(xfer_id, file, source, error): #This function adds an error to a transfer entry in the database
+def add_error_to_entry(xfer_id, name, source, error): #This function adds an error to a transfer entry in the database
     from datetime import datetime
     error_object = {
-        'file' : file, 
+        'file_name' : name, 
         'source': source,
         'error' : error,
         'time' : datetime.now()
@@ -174,7 +179,7 @@ def add_file_to_entry(xfer_id, file, source, hash): #This function adds an error
     from datetime import datetime
     name = file.rsplit('/', 1)[-1] 
     file_object = {
-        'name' : name, #The Brief name to be displayed in lists in the UI
+        'file_name' : name, #The Brief name to be displayed in lists in the UI
         'file' : file, #The full name and file location
         'source': source,
         'hash' : hash,
@@ -186,8 +191,12 @@ def add_file_to_entry(xfer_id, file, source, hash): #This function adds an error
 
 ### TO-DO - Add error handling and database interaction to GoGetter ###
 def gogetter(name, config_file, dir=''): # This function downloads files from HTTP destinations, generated MD5 hashes of those files, and verifies the integrity of those files against the origional
-    import os, sys, yaml, requests #Imports necessary libraries
+    import os  # Imports necessary libraries
+    import sys
     from threading import Thread
+
+    import requests
+    import yaml
 
     directory = os.path.join(os.getcwd(), name) #Generates the directory path based upon the current working directory and the name provided
 
@@ -252,7 +261,11 @@ def gogetter(name, config_file, dir=''): # This function downloads files from HT
 
 
 def ptcopy(name, config_file, dir=''): # This function copies all files in a directory tree to an identical directory tree, appends a given name to the beginning of each file name, verifies the integrity of the data and generates an md5 hash for each file
-    import shutil, os, yaml, time
+    import os
+    import shutil
+    import time
+
+    import yaml
 
     entry = make_xfer_entry(name, 'PTCopy')
 
@@ -296,38 +309,44 @@ def ptcopy(name, config_file, dir=''): # This function copies all files in a dir
     update_xfer_status(entry, 'Processing...')
     try:
         for new_file in get_files_list(new_dir): #For all files in the new directory...
+            try:
+                old_file = new_file.replace(new_dir, old_dir) #Figure out where the file came from so it can be verified
+                output(f'Old File: {old_file} New File: {new_file}')
 
-            old_file = new_file.replace(new_dir, old_dir) #Figure out where the file came from so it can be verified
-            output(f'Old File: {old_file} New File: {new_file}')
+                old_name = os.path.basename(new_file) #Find the origional name of the file
+                path_only = os.path.dirname(new_file) #Find the file path to the new file
+                new_name = f'{name}_{old_name}' #Append the transfer name to the file
+                new_path = os.path.join(path_only, new_name) #Generate the new full file path
 
-            old_name = os.path.basename(new_file) #Find the origional name of the file
-            path_only = os.path.dirname(new_file) #Find the file path to the new file
-            new_name = f'{name}_{old_name}' #Append the transfer name to the file
-            new_path = os.path.join(path_only, new_name) #Generate the new full file path
+                os.rename(new_file, new_path) #Rename the file
+                new_file = new_path
 
-            os.rename(new_file, new_path) #Rename the file
-            new_file = new_path
-        
-            new_file_hash = megamd5(new_file) #Hash the new file
-            output(new_file_hash)
-            old_file_hash = megamd5(old_file, make_file=False) #Hash the old file without generating the .md5 file; for verificatition 
-            output(old_file_hash)
+            
+                new_file_hash = 'new'
+                old_file_hash = 'old'
 
-            while new_file_hash != old_file_hash: #If the hashes do not match
-                output(f'{new_file} - File issue detected. Retrying.')
+                retry_count = 0
 
-                file_base = os.path.splitext(new_file)[0]
-                os.remove(f'{file_base}.md5') #Remove the generated MD5 file
-                os.remove(new_file) #Remove the copied file
+                while new_file_hash != old_file_hash: #If the hashes do not match
 
-                shutil.copy2(old_file, new_file) #Copy the individual file again
+                    new_file_hash = megamd5(new_file) #Hash the new copy of the file
+                    output(new_file_hash)
+                    old_file_hash = megamd5(old_file, make_file=False)
+                    output(old_file_hash) #Hash the old file without generating the .md5 file; for verificatition
 
-                new_file_hash = megamd5(new_file) #Hash the new copy of the file
-                output(new_file_hash)
-                old_file_hash = megamd5(old_file, make_file=False)
-                output(old_file_hash) #Hash the old file without generating the .md5 file; for verificatition
+                    if new_file_hash != old_file_hash:
+                        output(f'{new_file} - File issue detected. Retrying. Retry {retry_count}')
 
-            output(f'{new_file} - File integrity verified. Finishing.')
+                        file_base = os.path.splitext(new_file)[0]
+                        os.remove(f'{file_base}.md5') #Remove the generated MD5 file
+                        os.remove(new_file) #Remove the copied file
+
+                        shutil.copy2(old_file, new_file) #Copy the individual file again
+
+                output(f'{new_file} - File integrity verified. Finishing.')
+                add_file_to_entry(entry, new_file, old_file, new_file_hash)
+            except:
+                add_error_to_entry(entry, new_file,old_file, "File Processing Error - File Skipped")
     except Exception:
         update_xfer_status(entry, 'Failed - Rename or Verify Error')
         exit(1)
@@ -337,8 +356,12 @@ def ptcopy(name, config_file, dir=''): # This function copies all files in a dir
 
 
 def kicopy(name, config_file, dir=''):
-    import os, sys, yaml, requests #Imports necessary libraries
+    import os  # Imports necessary libraries
+    import sys
     from threading import Thread
+
+    import requests
+    import yaml
 
     print('An instance of KiCopy has been started.')
 
