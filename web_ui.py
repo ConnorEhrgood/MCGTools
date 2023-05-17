@@ -50,6 +50,27 @@ def json_person(person) -> dict:
     return json_person
 
 
+def json_transfer(transfer) -> dict:
+
+    json_transfer = {}
+
+    for field in transfer.keys():
+        if transfer[field]:
+            if field == '_id':
+                json_transfer["transfer_id"] = str(transfer['_id'])
+            elif field == 'init_time':
+                json_transfer[field] = transfer[field].strftime("%-m/%-d/%Y, %-H:%M:%S")
+            elif field == 'files' or field == 'errors':
+                json_transfer[field] = []
+                for i, file in enumerate(transfer[field]):
+                    json_transfer[field].append(file)  # add empty dict for each file/error
+                    json_transfer[field][i]['time'] = transfer[field][i]['time'].strftime("%-m/%-d/%Y, %-H:%M:%S")
+            else:
+                json_transfer[field] = transfer[field]
+
+    return json_transfer
+
+
 @api.get("/")
 async def root(): #This function returns a message with the API version.
     return {"message": "MAP Ingest API Version 0.1"}
@@ -104,6 +125,8 @@ async def get_transfers(): #This function returns the database entries for the 1
             }
         }
     ]))
+    for transfer in transfers_ls:
+        transfer['init_time'] = transfer['init_time'].strftime("%-m/%-d/%Y, %-H:%M:%S")
 
     return transfers_ls #That's all! Mongo does most of the heavy lifting here.
 
@@ -183,3 +206,16 @@ def get_people(search_text: str = None):
         for person in people:
             person["id"] = str(person.pop("_id"))
     return people
+
+@api.get('/transfer')
+def get_person(transfer_id: str):
+
+    try:
+        transfer_id = ObjectId(transfer_id)
+    except bson.errors.InvalidId:
+        raise HTTPException(status_code=400, detail="Invalid ObjectId. ObjectId must be a 24-character hex string")
+    
+    transfer = db.transfers.find_one({"_id": transfer_id})
+    transfer_json = json_transfer(transfer)
+
+    return transfer_json
