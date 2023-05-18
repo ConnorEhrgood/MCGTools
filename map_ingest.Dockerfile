@@ -4,7 +4,7 @@ FROM python:alpine as builder
 WORKDIR /map
 
 # Install git, clone the repo, install the requirements
-RUN apk update && apk add git && git clone https://github.com/ConnorEhrgood/MCGToo>
+RUN apk update && apk add git && git clone https://github.com/ConnorEhrgood/MCGTools . && pip install --target=/map/dependencies -r requirements.txt
 
 ##### Production Image ###
 FROM python:alpine
