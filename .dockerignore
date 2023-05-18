@@ -1,0 +1,7 @@
+.git
+.gitignore
+.dockerignore
+help.txt
+config_example.yaml
+requirements.txt
+map_ingest.Dockerfile
