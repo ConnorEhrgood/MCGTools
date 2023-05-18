@@ -121,9 +121,7 @@ def get_files_list(directory): # This function finds all files in a directory tr
 
 @retry(reraise=True, stop=stop_after_attempt(5), wait=wait_fixed(15))
 def remmd5(addr): # This function generates the MD5 hash of a remote file on an http server
-    import hashlib
-
-    import requests
+    import hashlib, requests
 
     with requests.get(addr, stream=True) as r: #Gets in streaming mode to prevent entire file being copied to RAM
         r.raise_for_status() #Outputs debugging data
