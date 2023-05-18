@@ -175,7 +175,7 @@ def get_person(person_id: str):
 def get_people(search_text: str = None):
 
     if search_text:
-        people = list(db.people_import_stage3.aggregate([
+        people = list(db.people.aggregate([
             {
                 '$search': {
                     'index': 'default', 
