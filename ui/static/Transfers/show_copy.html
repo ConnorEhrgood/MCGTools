@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+    <title>KiCopy - MCG Tools</title>
+    <link rel="stylesheet" href="../assets/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="../assets/css/ABeeZee.css">
+    <link rel="stylesheet" href="../assets/css/Nunito.css">
+    <link rel="stylesheet" href="../assets/fonts/fontawesome-all.min.css">
+    <link rel="stylesheet" href="../assets/css/Navbar-Right-Links-Dark-icons.css">
+</head>
+
+<body class="bg-gradient-primary">
+    <nav class="navbar navbar-light navbar-expand bg-white shadow mb-4 topbar static-top">
+        <div class="container-fluid">
+            <h1 style="padding-top: 10px;font-family: Nunito, sans-serif;color: var(--bs-gray-dark);">MAP&nbsp;</h1>
+            <h1 style="font-size: 50px;position: absolute;margin-left: 91px;">|</h1>
+            <h3 style="position: absolute;margin-left: 108px;margin-top: 7px;">Ingest</h3><button class="btn btn-link d-md-none rounded-circle me-3" id="sidebarToggleTop" type="button"></button><i class="fas fa-bars"></i>
+        </div>
+    </nav>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-9 col-lg-12 col-xl-10">
+                <h1><span style="color: rgb(255, 255, 255);">Full Show Transfer</span></h1>
+                <div class="card" style="margin-top: 12px;">
+                    <div class="card-header">
+                        <h5 class="mb-0">Start a Transfer</h5>
+                    </div>
+                    <div class="card-body">
+                        <form method="post" action="ingest_api/show_copy"><label class="form-label">Event Name:</label><input class="form-control" type="text" name="name" placeholder="20220101_EventName" required=""><label class="form-label" style="margin-top: 12px;">Config File:</label><input class="form-control" type="text" value="/home/administrator/MCGTools/Configs/config.yaml" name="config"><button class="btn btn-primary" type="submit" style="padding-top: 5px;margin-top: 12px;">Start Transfer</button></form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="../assets/bootstrap/js/bootstrap.min.js"></script>
+    <script src="../assets/js/bs-init.js"></script>
+    <script src="../assets/js/theme.js"></script>
+</body>
+
+</html>

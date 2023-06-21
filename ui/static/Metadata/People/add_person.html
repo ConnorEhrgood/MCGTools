@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+    <title>Add a Person - MAP Ingest</title>
+    <link rel="stylesheet" href="../../assets/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="../../assets/css/ABeeZee.css">
+    <link rel="stylesheet" href="../../assets/css/Nunito.css">
+    <link rel="stylesheet" href="../../assets/fonts/fontawesome-all.min.css">
+    <link rel="stylesheet" href="../../assets/css/Navbar-Right-Links-Dark-icons.css">
+</head>
+
+<body class="bg-gradient-primary">
+    <nav class="navbar navbar-light navbar-expand bg-white shadow mb-4 topbar static-top">
+        <div class="container-fluid">
+            <h1 style="padding-top: 10px;font-family: Nunito, sans-serif;color: var(--bs-gray-dark);">MAP&nbsp;</h1>
+            <h1 style="font-size: 50px;position: absolute;margin-left: 91px;">|</h1>
+            <h3 style="position: absolute;margin-left: 108px;margin-top: 7px;">Ingest</h3><button class="btn btn-link d-md-none rounded-circle me-3" id="sidebarToggleTop" type="button"></button><i class="fas fa-bars"></i>
+        </div>
+    </nav>
+    <div class="container" style="padding-bottom: 24px;">
+        <div class="row justify-content-center">
+            <div class="col-md-9 col-lg-12 col-xl-10">
+                <h1><span style="color: rgb(255, 255, 255);">People</span></h1>
+                <div class="card" style="margin-top: 12px;padding-bottom: 0;">
+                    <div class="card-header">
+                        <h5 class="mb-0">Add a Person</h5>
+                    </div>
+                    <div class="card-body" style="padding-bottom: 16px;"><label class="form-label fs-3">Name:</label>
+                        <form method="post" action="ingest_api/add_person"><label class="form-label">Prefix:</label><input class="form-control" type="text" name="name_prefix"><label class="form-label" style="margin-top: 12px;">First Name:</label><input class="form-control" type="text" name="name_first" required=""><label class="form-label" style="margin-top: 12px;">Nickname:</label><input class="form-control" type="text" name="name_nickname"><label class="form-label" style="margin-top: 12px;">Middle Name:</label><input class="form-control" type="text" name="name_middle"><label class="form-label" style="margin-top: 12px;">Last Name:</label><input class="form-control" type="text" name="name_last" required=""><label class="form-label" style="margin-top: 12px;">Suffix:</label><input class="form-control" type="text" name="name_suffix"><label class="form-label fs-3" style="display: block;margin-top: 14px;">Dates:</label><label class="form-label" style="display: block;">Date of Birth:</label><input class="form-control" type="date" name="date_birth"><label class="form-label" style="display: block;margin-top: 10px;">Date of Death:</label><input class="form-control" type="date" name="date_death"><label class="form-label fs-3" style="display: block;margin-top: 14px;">Info:</label><label class="form-label" style="display: block;">Brief Description:</label><input class="form-control" type="text" name="desc_brief" required="" placeholder="3 to 6 words..."><label class="form-label" style="display: block;margin-top: 10px;">Full Description:</label><input class="form-control form-control-lg" type="text" name="desc_full" required=""><label class="form-label" style="display: block;margin-top: 8px;">Image:</label><input class="form-control" type="file" name="info_image" accept="image/*"><button class="btn btn-primary" type="submit" style="padding-top: 5px;margin-top: 24px;">Add Person</button></form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="../../assets/bootstrap/js/bootstrap.min.js"></script>
+    <script src="../../assets/js/bs-init.js"></script>
+    <script src="../../assets/js/theme.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+    <title>Add a Person - MAP Ingest</title>
+    <link rel="stylesheet" href="../../assets/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="../../assets/css/ABeeZee.css">
+    <link rel="stylesheet" href="../../assets/css/Nunito.css">
+    <link rel="stylesheet" href="../../assets/fonts/fontawesome-all.min.css">
+    <link rel="stylesheet" href="../../assets/css/Navbar-Right-Links-Dark-icons.css">
+</head>
+
+<body class="bg-gradient-primary">
+    <div class="modal fade" role="dialog" tabindex="-1" id="instance_modal">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">Add an Instance</h4><button class="btn-close" type="button" aria-label="Close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="instance_form" method="get" action="/test" enctype="application/x-www-form-urlencoded"><label class="form-label">Instance Type:</label><select class="form-select" id="instance_type">
+                            <option value="0" selected="">Audio</option>
+                            <option value="1">Video</option>
+                        </select><label class="form-label" style="margin-top: 16px;">Instance Medium:</label><select class="form-select" id="instance_medium">
+                            <option value="0" selected="">Digital</option>
+                            <option value="1">CD</option>
+                            <option value="2">DVD</option>
+                            <option value="3">Cassette Tape</option>
+                            <option value="4">Vinyl Record</option>
+                            <option value="5">Reel-to-Reel Tape</option>
+                            <option value="6">DAT Tape</option>
+                            <option value="7">DA-88 Tape</option>
+                            <option value="8">DV Tape</option>
+                            <option value="9">VHS Tape</option>
+                            <option value="10">BetaCam Tape</option>
+                            <option value="11">Hi8 Tape</option>
+                        </select><label class="form-label" style="margin-top: 16px;">Instance Generation:</label><select class="form-select" id="instance_generation">
+                            <option value="0">Original</option>
+                            <option value="1">Original Footage</option>
+                            <option value="2">Original Recording</option>
+                            <option value="3">Master</option>
+                            <option value="4">Distribution Master</option>
+                            <option value="5">Preservation Master</option>
+                            <option value="6">Copy</option>
+                            <option value="7">Access Copy</option>
+                            <option value="8">Mezzanine</option>
+                            <option value="9">Dub</option>
+                            <option value="10">Original - Access/Backup</option>
+                            <option value="11">Original Footage - Access/Backup</option>
+                            <option value="12">Original Recording - Access/Backup</option>
+                        </select>
+                        <div class="container" id="import_fields"><label class="form-label" style="margin-top: 16px;margin-left: -25px;">Import Type:</label><select class="form-select" id="import_type" style="margin-top: 0px;margin-left: -25px;width: 111.75%;">
+                                <option value="0" selected="">Import Without Hard-Link</option>
+                                <option value="1">Import In Place [NOT YET IMPLEMENTED]</option>
+                                <option value="2">Import and Auto-File</option>
+                            </select><label class="form-label" id="file_header" style="margin-top: 16px;margin-left: -25px;">Staged File(s) to Import:&nbsp;</label><span class="spinner-border spinner-border-sm" role="status" id="file_select_spinner" style="margin-top: 16px;"></span><select class="form-select" id="file_select" style="margin-left: -25px;width: 111.75%;" multiple="">
+                                <option value="0">This is item 1</option>
+                                <option value="1">This is item 2</option>
+                                <option value="2">This is item 3</option>
+                            </select></div><label class="form-label" id="location_header" style="margin-top: 16px;">Instance Location:</label><input class="form-control" type="text" id="instance_location"><label class="form-label" style="margin-top: 12px;">Condition:</label><select class="form-select">
+                            <option value="0" selected="">Good</option>
+                            <option value="1">Fair</option>
+                            <option value="2">Bad</option>
+                        </select><button class="btn btn-primary" type="submit" style="margin-top: 16px;">Add</button>
+                    </form>
+                </div>
+                <div class="modal-footer"><button class="btn btn-light" type="button" data-bs-dismiss="modal">Close</button></div>
+            </div>
+        </div>
+    </div>
+    <nav class="navbar navbar-light navbar-expand bg-white shadow mb-4 topbar static-top">
+        <div class="container-fluid">
+            <h1 style="padding-top: 10px;font-family: Nunito, sans-serif;color: var(--bs-gray-dark);">MAP&nbsp;</h1>
+            <h1 style="font-size: 50px;position: absolute;margin-left: 91px;">|</h1>
+            <h3 style="position: absolute;margin-left: 108px;margin-top: 7px;">Ingest</h3><button class="btn btn-link d-md-none rounded-circle me-3" id="sidebarToggleTop" type="button"></button><i class="fas fa-bars"></i>
+        </div>
+    </nav>
+    <div class="container" style="padding-bottom: 24px;">
+        <div class="row justify-content-center">
+            <div class="col-md-9 col-lg-12 col-xl-10">
+                <h1><span style="color: rgb(255, 255, 255);">Assets</span></h1>
+                <div class="card" style="margin-top: 12px;padding-bottom: 0;">
+                    <div class="card-header">
+                        <h5 class="mb-0">Add an Asset</h5>
+                    </div>
+                    <div class="card-body" style="padding-bottom: 16px;"><label class="form-label fs-3">Asset Details:</label>
+                        <form method="post" action="http://172.25.2.90:8001/add_asset"><label class="form-label" id="name_header" style="margin-top: 12px;">Asset Name:</label><input class="form-control" type="text" id="name" name="description" required="" placeholder="YYYYMMDD_ShowName_Info"><label class="form-label" id="event_association_header" style="margin-top: 12px;">Event Association:</label><select class="form-select" id="event_association" name="event_association">
+                                <option value="undefined" selected="">Unknown</option>
+                            </select><label class="form-label" id="description_header" style="margin-top: 12px;">Description:</label><input class="form-control" type="text" id="description" name="description" required=""><label class="form-label" id="notes_header" style="margin-top: 12px;">Notes:</label><input class="form-control form-control-lg" type="text" id="notes" name="notes"><label class="form-label fs-3" style="margin-top: 16px;">Instances:</label><button class="btn btn-primary" id="new_instance" type="button" style="margin-left: 70%;width: 141.5938px;">Add Instance</button>
+                            <div class="table-responsive">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>Instance ID</th>
+                                            <th>Type</th>
+                                            <th>Generation</th>
+                                            <th>Medium</th>
+                                            <th>Location</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>None</td>
+                                        </tr>
+                                        <tr></tr>
+                                    </tbody>
+                                </table>
+                            </div><button class="btn btn-primary" type="submit" style="padding-top: 5px;margin-top: 24px;">Add Asset</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="../../assets/bootstrap/js/bootstrap.min.js"></script>
+    <script src="../../assets/js/bs-init.js"></script>
+    <script src="../../assets/js/add_asset.js"></script>
+    <script src="../../assets/js/theme.js"></script>
+</body>
+
+</html>

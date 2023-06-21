@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+    <title>Audio Asset - MAP</title>
+    <link rel="stylesheet" href="../../assets/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="../../assets/css/ABeeZee.css">
+    <link rel="stylesheet" href="../../assets/css/Nunito.css">
+    <link rel="stylesheet" href="../../assets/fonts/fontawesome-all.min.css">
+    <link rel="stylesheet" href="../../assets/css/Navbar-Right-Links-Dark-icons.css">
+</head>
+
+<body id="page-top">
+    <div class="modal fade" role="dialog" tabindex="-1" id="song_modal">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">Select a Song</h4><button class="btn-close" type="button" aria-label="Close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>The content of your modal.</p>
+                </div>
+                <div class="modal-footer"><button class="btn btn-light" type="button" data-bs-dismiss="modal">Close</button><button class="btn btn-primary" type="button">Save</button></div>
+            </div>
+        </div>
+    </div>
+    <div id="wrapper">
+        <nav class="navbar navbar-dark align-items-start sidebar sidebar-dark accordion bg-gradient-primary p-0">
+            <div class="container-fluid d-flex flex-column p-0">
+                <hr class="sidebar-divider my-0">
+                <ul class="navbar-nav text-light" id="accordionSidebar"></ul>
+                <h1 style="padding-top: 15px;font-family: Nunito, sans-serif;color: var(--bs-accordion-bg);font-size: 26.88px;padding-right: 85px;margin-right: -34px;margin-left: 27px;"><span style="color: rgb(255, 255, 255);">MCG</span><br><span style="color: rgb(255, 255, 255);">Archive</span><br><span style="color: rgb(255, 255, 255);">Platform</span></h1>
+                <div class="text-center d-none d-md-inline"></div>
+            </div>
+        </nav>
+        <div class="d-flex flex-column" id="content-wrapper">
+            <div id="content">
+                <nav class="navbar navbar-light navbar-expand bg-white shadow mb-4 topbar static-top">
+                    <div class="container-fluid"><button class="btn btn-link d-md-none rounded-circle me-3" id="sidebarToggleTop" type="button"><i class="fas fa-bars"></i></button>
+                        <form class="d-none d-sm-inline-block me-auto ms-md-3 my-2 my-md-0 mw-100 navbar-search">
+                            <div class="input-group"><input class="bg-light form-control border-0 small" type="text" placeholder="Search Archives"><button class="btn btn-primary py-0" type="submit"><i class="fas fa-search"></i></button></div>
+                        </form>
+                    </div>
+                </nav>
+                <div class="container-fluid shadow-none">
+                    <h3 class="text-dark shadow-none mb-4">Audio Asset Tagging</h3><audio class="shadow" controls="" style="width: 100%;border-radius: 50px;--bs-secondary: #858796;--bs-secondary-rgb: 133,135,150;border: 1px solid var(--bs-gray-300);">
+                        <source src="jazz.mp3" type="audio/mpeg">
+                        <source src="jazz2.mp3" type="audio/mpeg">
+                    </audio>
+                    <form class="shadow" id="tagging_bar" action="/tag" style="margin-bottom: 16px;margin-top: 12px;#display: none;">
+                        <div class="row" style="margin-left: 0px;margin-right: 0px;">
+                            <div class="col" id="tag_time_col" style="max-width: 118px;padding-right: 0;padding-left: 0px;"><input class="form-control" type="text" id="tag_time" name="time" placeholder="HH:MM:SS" required="" pattern="^(?:(?:[01]\d|2[0-3]):)?(?:[0-5]\d:)?(?:[0-5]\d|60)$" style="width: 100%;height: 100%;background: var(--bs-white);box-shadow: 0px 0px;border-right-style: solid;border-top-right-radius: 0;border-bottom-right-radius: 0;"></div>
+                            <div class="col" id="tag_type_col" style="max-width: 159px;padding-right: 0;padding-left: 0;box-shadow: 0px 0px;"><select class="form-select" id="tag_type" style="width: 100%;height: 100%;border-radius: 0;box-shadow: 0px 0px;" name="Tag Type" value="0" required="">
+                                    <option value="0">Tag Type</option>
+                                    <option value="1">Song Start</option>
+                                    <option value="2">Song End</option>
+                                    <option value="3">Spoken</option>
+                                    <option value="4">Solo</option>
+                                </select></div>
+                            <div class="col" id="tag_person_col" style="max-width: 200px;padding-right: 0;padding-left: 0;box-shadow: 0px 0px;"><select class="form-select" id="tag_person" style="width: 100%;height: 100%;border-radius: 0;box-shadow: 0px 0px;">
+                                    <option value="0" selected="">Select Person</option>
+                                    <option value="12">John Appleseed</option>
+                                    <option value="13">Jane Doe</option>
+                                    <option value="14">Bill Smith</option>
+                                    <option value="">Unknown</option>
+                                </select></div>
+                            <div class="col" id="tag_song_col" style="padding-right: 0;padding-left: 0;max-width: 200px;"><button class="btn btn-light" id="tag_song" type="button" style="color: var(--bs-gray);padding-right: 0;padding-left: 0;width: 100%;min-width: 100%;background: #ffffff;border-radius: 0;border-style: solid;border-color: var(--bs-btn-hover-bg);">Select Song</button></div>
+                            <div class="col" id="tag_instrument_col" style="max-width: 200px;padding-right: 0;padding-left: 0;box-shadow: 0px 0px;"><select class="form-select" id="tag_instrument" style="width: 100%;height: 100%;border-radius: 0;box-shadow: 0px 0px;">
+                                    <option value="" selected="">Select Instrument</option>
+                                    <option value="12">Piano</option>
+                                    <option value="13">Bass</option>
+                                    <option value="14">Drums</option>
+                                    <option value="">Unknown</option>
+                                </select></div>
+                            <div class="col" id="tag_description_col" style="padding-right: 0px;padding-left: 0;box-shadow: 0px 0px;"><input class="form-control" type="text" id="tag_description" name="description" placeholder="Description" style="width: 100%;height: 100%;border-radius: 0;box-shadow: 0px 0px;"></div>
+                            <div class="col" id="tag_add_col" style="max-width: 120px;box-shadow: 0px 0px;padding-left: 0;padding-right: 0px;"><button class="btn btn-primary" id="tag_add" type="submit" style="width: 100%;height: 100%;border-bottom-left-radius: 0;border-top-left-radius: 0;">Add Tag</button></div>
+                        </div>
+                    </form>
+                    <div class="row mb-3">
+                        <div class="col-lg-8" style="width: 378.594px;">
+                            <div class="row mb-3 d-none">
+                                <div class="col">
+                                    <div class="card text-white bg-primary shadow">
+                                        <div class="card-body">
+                                            <div class="row mb-2">
+                                                <div class="col">
+                                                    <p class="m-0">Peformance</p>
+                                                    <p class="m-0"><strong>65.2%</strong></p>
+                                                </div>
+                                                <div class="col-auto"><i class="fas fa-rocket fa-2x"></i></div>
+                                            </div>
+                                            <p class="text-white-50 small m-0"><i class="fas fa-arrow-up"></i>&nbsp;5% since last month</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="card text-white bg-success shadow">
+                                        <div class="card-body">
+                                            <div class="row mb-2">
+                                                <div class="col">
+                                                    <p class="m-0">Peformance</p>
+                                                    <p class="m-0"><strong>65.2%</strong></p>
+                                                </div>
+                                                <div class="col-auto"><i class="fas fa-rocket fa-2x"></i></div>
+                                            </div>
+                                            <p class="text-white-50 small m-0"><i class="fas fa-arrow-up"></i>&nbsp;5% since last month</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row" style="width: 376.594px;">
+                                <div class="col-lg-8" style="width: 100%;">
+                                    <div class="card shadow mb-3" style="width: 354.781px;">
+                                        <div class="card-header py-3">
+                                            <p class="text-primary m-0 fw-bold">Details</p>
+                                        </div>
+                                        <div class="card-body">
+                                            <h6 id="people_header-1" style="margin-bottom: 0px;"><strong>Asset Name:</strong></h6>
+                                            <p id="people-1">20230108_JohnAppleseed_MainMix</p>
+                                            <h6 id="event_header" style="margin-bottom: 0px;"><strong>Event Assosiation:</strong></h6>
+                                            <p id="event">John Appleseed - Jan. 8th 2023</p>
+                                            <h6 id="date_created_header" style="margin-bottom: 0px;"><strong>Date Created:</strong></h6>
+                                            <p id="date_created">1/8/2023</p>
+                                            <h6 id="date_death_header" style="margin-bottom: 0px;"><strong>Description:</strong></h6>
+                                            <p id="description">The stereo broadcast mix of a concert that didn't actually happen</p>
+                                            <h6 id="people_header" style="margin-bottom: 0px;"><strong>People:</strong></h6>
+                                            <p id="people">John Appleseed, Jane Doe, Bill Smith</p>
+                                            <h6 id="person_id_header" style="margin-bottom: 0px;"><strong>MAP&nbsp;Asset ID:</strong></h6>
+                                            <p id="asset_id">xxxxxxxxxxxxxxxxxxxxxxxx</p>
+                                            <form>
+                                                <div class="mb-3"></div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col" style="width: 603.812px;">
+                            <div class="card shadow">
+                                <div class="card-header py-3">
+                                    <p class="text-primary m-0 fw-bold">Tags</p>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Time</th>
+                                                    <th>Type</th>
+                                                    <th>Person</th>
+                                                    <th>Description</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td><a href="1:22:14">1:22:14</a></td>
+                                                    <td>Solo - Piano</td>
+                                                    <td>John Appleseed</td>
+                                                    <td>Pianist solos</td>
+                                                </tr>
+                                                <tr>
+                                                    <td><a href="2:13:32">2:13:32</a></td>
+                                                    <td>Spoken</td>
+                                                    <td>John Appleseed</td>
+                                                    <td>Guest artist introduced - Bill Smith</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <form>
+                                        <div class="mb-3"></div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <footer class="bg-white sticky-footer" style="width: 985.41px;">
+                <div class="container my-auto">
+                    <div class="text-center my-auto copyright"><span>Copyright © MCG Jazz 2023</span></div>
+                </div>
+            </footer>
+        </div><a class="border rounded d-inline scroll-to-top" href="#page-top"><i class="fas fa-angle-up"></i></a>
+    </div>
+    <script src="../../assets/bootstrap/js/bootstrap.min.js"></script>
+    <script src="../../assets/js/bs-init.js"></script>
+    <script src="../../assets/js/tagging_bar.js"></script>
+    <script src="../../assets/js/theme.js"></script>
+</body>
+
+</html>
