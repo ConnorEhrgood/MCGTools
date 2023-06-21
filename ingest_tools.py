@@ -14,13 +14,14 @@ def output(*args, **kwargs): #Function to print data to console ONLY if process 
         print(*args, **kwargs)
 
 
-@retry(reraise=True, stop=stop_after_attempt(5), wait=wait_fixed(15))
+@retry(stop=stop_after_attempt(5), wait=wait_fixed(15))
 def goget(addr, output_file): # This function downloads files from HTTP destinations
     import requests
 
     try:
         head = requests.head(addr)
-    except Exception:
+    except Exception as e:
+        print(e)
         raise Exception('Connection error. Server not found or file may not exist.')
     file_type = head.headers['content-type'] #Gets file type and stores as string
     file_size = int(head.headers['content-length']) #Gets file size (in bytes) and stores as int
@@ -43,7 +44,8 @@ def goget(addr, output_file): # This function downloads files from HTTP destinat
                         current_prog = prog
                         output(f'{output_file} - Download {current_prog}% complete.', end = '\r') #Prints current progress percentage
         output(f'{output_file} - Download complete!')
-    except Exception:
+    except Exception as e:
+        print(e)
         raise Exception('Download error.')
 
 
@@ -119,7 +121,7 @@ def get_files_list(directory): # This function finds all files in a directory tr
                 
     return files_ls # Return the list of files
 
-@retry(reraise=True, stop=stop_after_attempt(5), wait=wait_fixed(15))
+@retry(stop=stop_after_attempt(5), wait=wait_fixed(15))
 def remmd5(addr): # This function generates the MD5 hash of a remote file on an http server
     import hashlib, requests
 
@@ -148,6 +150,22 @@ def make_xfer_entry(name, type): #This function adds a transfer entry in the dat
 
     entry = db.transfers.insert_one(transfer).inserted_id
     return entry
+
+def make_file_entry(name, type, location, metadata, hash): #This function adds a transfer entry in the database and returns the entry ID
+    from datetime import datetime
+    file = {
+        'name' : name,
+        'type' : type,
+        'location' : location,
+        'metadata' : metadata,
+        'time_added' : datetime.now(),
+        'hash' : hash,
+        'status' : 'Unknown',
+    }
+
+    entry = db.files.insert_one(file).inserted_id
+    return entry
+
 
 
 
@@ -186,6 +204,82 @@ def add_file_to_entry(xfer_id, file, source, hash): #This function adds an error
     db.transfers.update_one({'_id': xfer_id },{ '$push': { 'files': file_object } })
 
 
+
+def vcopy(src, dst, make_md5_file=True, make_xfer_entry=True):
+    import os
+    import shutil
+    from threading import Thread
+
+    file_name = src.rsplit('/', 1)[-1]
+
+    if make_xfer_entry:
+        entry = make_xfer_entry(file_name, 'vCopy')
+
+    global src_hash
+    src_hash = 1
+    global dst_hash
+    dst_hash = 2
+
+    #Define hash function
+    def hash(src):
+        global src_hash
+        src_hash = megamd5(src, make_file=False)
+
+    #Define move function
+
+    def move(src,dst):
+
+        global dst_hash
+
+        shutil.copy2(src,dst)
+
+        if make_md5_file:
+            dst_hash = megamd5(dst)
+        else:
+            dst_hash = megamd5(dst, make_file=False)
+
+        if make_xfer_entry:
+            update_xfer_status(entry, 'Transferring')
+
+    i = 0
+    while dst_hash != src_hash and i < 3:
+
+        i += 1
+
+        #Start hash thread
+        hash_thread = Thread(target=hash, args=(src, ))
+        hash_thread.start()
+
+        #Start move thread
+        move_thread = Thread(target=move, args=(src, dst, ))
+        move_thread.start()
+
+        #Join both threads(sequentially is fine)
+        hash_thread.join()
+        move_thread.join()
+
+        #Compare the hashes. If good, finish up. If bad, try again.
+        output(f'Source Hash: {src_hash} Dest. Hash: {dst_hash}')
+
+        if dst_hash == src_hash:
+            add_file_to_entry(entry, dst, src, dst_hash)
+            if make_xfer_entry:
+                update_xfer_status(entry, 'Complete!')
+            break
+        elif i < 3:
+            if make_xfer_entry:
+                update_xfer_status(entry, f'Retrying - Try {i} of 3')
+            os.remove(dst)
+            if make_md5_file:
+                os.remove(f'{os.path.splitext(dst)[0]}.md5')
+        else:
+            if make_xfer_entry:
+                update_xfer_status(entry, 'Failed')
+            os.remove(dst)
+            if make_md5_file:
+                os.remove(f'{os.path.splitext(dst)[0]}.md5')
+
+    return dst_hash
 
 ### TO-DO - Add error handling and database interaction to GoGetter ###
 def gogetter(name, config_file, dir=''): # This function downloads files from HTTP destinations, generated MD5 hashes of those files, and verifies the integrity of those files against the origional
@@ -522,3 +616,49 @@ def kicopy(name, config_file, dir=''):
         update_xfer_status(entry, 'Completed With Errors')
 
     print('\x1b[6;30;42m' + 'All Done!' + '\x1b[0m')
+
+def get_metadata(file):
+    from datetime import datetime
+    from tinytag import TinyTag
+
+    metadata = TinyTag.get(file)
+    cleaned_metadata = {
+        key: value
+        for key, value in metadata.__dict__.items()
+        if not key.startswith("_") and value is not None and value != {}
+    }
+
+    cleaned_metadata['created'] = os.path.getctime(file)
+    cleaned_metadata['modified'] = os.path.getmtime(file)
+
+
+    return cleaned_metadata
+
+def auto_file(instance_name, staging_location, dst, files_type, files):
+    import os, shutil, time
+
+    entry = make_xfer_entry(instance_name, 'Auto-File')
+
+    file_ids = []
+
+    update_xfer_status(entry, 'Running')
+
+    try:
+        for file in files:
+            file_source = os.path.join(staging_location, file)
+            file_dest = os.path.join(dst, file)
+
+            hash = vcopy(file_source, file_dest, make_md5_file=False, make_xfer_entry=False)
+
+            metadata = get_metadata(file_source)
+
+            file_entry = make_file_entry(file, files_type, file_dest, metadata, hash)
+
+            add_file_to_entry(entry, file, file_source, hash)
+
+            file_ids.append(file_entry)
+        update_xfer_status(entry, 'Complete!')
+
+        return file_ids
+    except Exception:
+        update_xfer_status(entry, 'Failed')
