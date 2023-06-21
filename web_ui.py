@@ -202,7 +202,7 @@ def get_people(search_text: str = None):
 
     else:
         # Retrieve all documents in the "people" collection
-        people = list(db.people_import_stage3.find({},{ '_id': 1, 'name_first': 1, 'name_nickname': 1, 'name_last': 1, 'name_suffix': 1, 'desc_brief': 1, 'role': 1, 'appearances': 1}))
+        people = list(db.people.find({},{ '_id': 1, 'name_first': 1, 'name_nickname': 1, 'name_last': 1, 'name_suffix': 1, 'desc_brief': 1, 'role': 1, 'appearances': 1}))
         for person in people:
             person["id"] = str(person.pop("_id"))
     return people
