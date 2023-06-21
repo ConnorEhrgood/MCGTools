@@ -1,7 +1,9 @@
 services:
 
   map_ingest:
-    build: map_ingest.Dockerfile
+    build:
+      context: .
+      dockerfile: ingest_server.Dockerfile
     ports:
       - "8000:8000"
     volumes:
