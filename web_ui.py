@@ -20,7 +20,9 @@ print(server_address)
 api = FastAPI()
 
 origins = [ #Allowable origins for CORS
-    server_address
+    server_address,
+    'http://192.168.0.230:8000',
+
 ]
 
 api.add_middleware( #CORS setup to make sure it can be run from the main web server
@@ -80,14 +82,14 @@ async def kicopy_xfer(name: str = Form(), config: str = Form()): #This is the fu
     t = Thread(target=kicopy, args=(name, config, )) #Defining KiCopy thread
     t.start() #Start PTCopy
     sleep(0.25) #Wait to make sure the DB entries are in before user is redirected
-    return RedirectResponse(f'{server_address}/transfers/') #Redirect user to transfers page
+    return RedirectResponse(f'{server_address}/Transfers/transfers.html') #Redirect user to transfers page
 
 @api.post('/ptcopy/')
 async def ptcopy_xfer(name: str = Form(), config: str = Form()): #This is the function that handles a PTCopy Transfer
     t = Thread(target=ptcopy, args=(name, config, )) #Defining PTCopy thread
     t.start() #Start PTCopy
     sleep(0.25) #Wait to make sure the DB entries are in before user is redirected
-    return RedirectResponse(f'{server_address}/transfers/') #Redirect user to transfers page
+    return RedirectResponse(f'{server_address}/Transfers/transfers.html') #Redirect user to transfers page
 
 @api.post('/show_copy/')
 async def show_xfer(name: str = Form(), config: str = Form()): #This is the function that handles a full show transfer
@@ -96,7 +98,7 @@ async def show_xfer(name: str = Form(), config: str = Form()): #This is the func
     pt = Thread(target=ptcopy, args=(name, config, )) #Defining PTCopy thread
     pt.start() #Start PTCopy
     sleep(0.25) #Wait to make sure the DB entries are in before user is redirected
-    return RedirectResponse(f'{server_address}/transfers/') #Redirect user to transfers page
+    return RedirectResponse(f'{server_address}/Transfers/transfers.html') #Redirect user to transfers page
 
 @api.get('/transfers/')
 async def get_transfers(): #This function returns the database entries for the 10 most recent transfers
@@ -156,7 +158,7 @@ async def add_person(
                 person[field] = locals()[field]
 
     entry = db.people.insert_one(person).inserted_id
-    return RedirectResponse(f'{server_address}/person?person_id={entry}')
+    return RedirectResponse(f'{server_address}/People/person.html?person_id={entry}')
 
 @api.get('/person')
 def get_person(person_id: str):

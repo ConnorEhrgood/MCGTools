@@ -4,3 +4,4 @@ TestFiles/
 Configs/
 /CLITools/KiPro Commands
 MAP.code-workspace
+docker/docker-compose.yml
