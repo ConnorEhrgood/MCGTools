@@ -13,7 +13,7 @@ COPY --from=builder     /map /map
 
 ENV PYTHONPATH="${PYTHONPATH}:/map/dependencies"
 
-# Install Uvicorn on the production container (Needs to do stuff, might be able to>
+# Install Uvicorn on the production container (Needs to do stuff, might be able to remove some day)
 RUN pip install --ignore-installed uvicorn==0.22.0
 
 WORKDIR /map
