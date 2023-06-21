@@ -1,10 +1,12 @@
 ##### Builder Image #####
 FROM python:alpine as builder
 
+COPY ingest_server/* /map
+
 WORKDIR /map
 
 # Install git, clone the repo, install the requirements
-RUN apk update && apk add git && git clone https://github.com/ConnorEhrgood/MCGTools . && pip install --target=/map/dependencies -r requirements.txt
+RUN apk update && pip install --target=/map/dependencies -r requirements.txt
 
 ##### Production Image ###
 FROM python:alpine

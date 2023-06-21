@@ -1,0 +1,18 @@
+services:
+
+  map_ingest:
+    build: map_ingest.Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - "/mnt/jazz_repository:/jazz_repository"
+      - "/mnt/pt_shows:/pt_shows"
+    environment:
+      SERVER_ADDRESS: "http://<Server Address>"
+      DB_CONNECT_STRING: "<MongoConnectString>"
+      DB_NAME: "<DB Name>"
+
+  nginx:
+    image: "nginx:latest"
+    environment:
+      - API_SERVER_ADDRESS="http://<Server Address>:8000/"
