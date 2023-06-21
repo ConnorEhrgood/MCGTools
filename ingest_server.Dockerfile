@@ -1,7 +1,7 @@
 ##### Builder Image #####
 FROM python:alpine as builder
 
-COPY ingest_server/* /map
+COPY ingest_server /map
 
 WORKDIR /map
 
